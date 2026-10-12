@@ -74,7 +74,6 @@ export default function ResumenView({ r }: { r: ResumenCaja }) {
       <div className="rounded-lg bg-slate-900 p-4 text-white">
         <p className="text-xs uppercase tracking-wide text-slate-300">Efectivo esperado en caja</p>
         <p className="mt-1 text-3xl font-semibold">{money(r.efectivoEsperado)}</p>
-        <p className="mt-1 text-xs text-slate-400">Inicial + ventas en efectivo + ingresos − egresos</p>
       </div>
       {r.montoFinal != null && (
         <div className="grid gap-3 sm:grid-cols-3">

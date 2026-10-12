@@ -125,7 +125,7 @@ function AdminDashboard() {
   const [resumen, setResumen] = useState<Dashboard | null>(null);
   const [ultimas, setUltimas] = useState<{ venta?: string; compra?: string }>({});
 
-  const [heatmapRangoDias, setHeatmapRangoDias] = useState(30);
+  const [heatmapRangoDias] = useState(30);
   const [evolucionRangoDias, setEvolucionRangoDias] = useState(7);
   const [comprasVentasRangoMeses, setComprasVentasRangoMeses] = useState(6);
   const [mesSeleccionado, setMesSeleccionado] = useState<string>(() => claveMes(new Date().toISOString()));
