@@ -70,10 +70,11 @@ export default function ResumenView({ r }: { r: ResumenCaja }) {
         <div className="rounded-lg border border-primary-200 bg-primary-50 p-3">
           <p className="text-xs text-primary-700">Total ventas</p><p className="mt-1 text-lg font-semibold text-primary-800">{money(r.totalVentas)}</p>
         </div>
+        
+        <div className="rounded-lg bg-slate-900 p-4 text-white">
+          <p className="text-xs uppercase tracking-wide text-slate-300">Efectivo esperado en caja</p>
+          <p className="mt-1 text-3xl font-semibold">{money(r.efectivoEsperado)}</p>
       </div>
-      <div className="rounded-lg bg-slate-900 p-4 text-white">
-        <p className="text-xs uppercase tracking-wide text-slate-300">Efectivo esperado en caja</p>
-        <p className="mt-1 text-3xl font-semibold">{money(r.efectivoEsperado)}</p>
       </div>
       {r.montoFinal != null && (
         <div className="grid gap-3 sm:grid-cols-3">
