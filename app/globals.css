@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Color base del sistema. Se cambia desde Configuración → Apariencia (se guarda en la empresa). */
+:root {
+  --primary: #2563eb;
+  --background: #f4f4f5;
+  --foreground: #18181b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Toda la paleta "primary" se deriva de una sola variable */
+  --color-primary: var(--primary);
+  --color-primary-dark: color-mix(in oklab, var(--primary) 85%, black);
+  --color-primary-50: color-mix(in oklab, var(--primary) 8%, white);
+  --color-primary-100: color-mix(in oklab, var(--primary) 16%, white);
+  --color-primary-200: color-mix(in oklab, var(--primary) 30%, white);
+  --color-primary-300: color-mix(in oklab, var(--primary) 50%, white);
+  --color-primary-400: color-mix(in oklab, var(--primary) 75%, white);
+  --color-primary-500: var(--primary);
+  --color-primary-600: color-mix(in oklab, var(--primary) 88%, black);
+  --color-primary-700: color-mix(in oklab, var(--primary) 72%, black);
+  --color-primary-800: color-mix(in oklab, var(--primary) 56%, black);
+  --color-primary-900: color-mix(in oklab, var(--primary) 40%, black);
+  --color-primary-950: color-mix(in oklab, var(--primary) 25%, black);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Scrollbar discreta */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--primary) 35%, white) transparent; }
+
+/* Impresión de tickets */
+@media print {
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area { position: absolute; left: 0; top: 0; width: 80mm; padding: 4mm; background: white; color: black; }
+}
