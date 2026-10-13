@@ -75,6 +75,32 @@ export function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : "Ocurrió un error inesperado";
 }
 
+/** Descarga un archivo protegido (con JWT) y lo guarda con el nombre que indique el servidor. */
+export async function apiDownload(path: string, nombrePorDefecto: string): Promise<void> {
+  const headers: Record<string, string> = {};
+  const token = tokenStore.get();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  let res: Response;
+  try { res = await fetch(API_BASE + path, { headers }); }
+  catch { throw new ApiError(0, "No se pudo conectar con el servidor. Verifique que el backend esté en ejecución."); }
+  if (!res.ok) {
+    if (res.status === 401) unauthorizedHandler?.();
+    let msg = `Error ${res.status}`;
+    try { msg = ((await res.json()) as { message?: string }).message ?? msg; } catch { /* sin cuerpo JSON */ }
+    throw new ApiError(res.status, msg);
+  }
+  const disp = res.headers.get("Content-Disposition") ?? "";
+  const nombre = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disp)?.[1] ?? nombrePorDefecto;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = decodeURIComponent(nombre);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** Subida multipart (archivo) con JWT; el navegador define el Content-Type con su boundary. */
 export async function apiUpload<T = unknown>(path: string, campo: string, archivo: File): Promise<T> {
   const fd = new FormData();

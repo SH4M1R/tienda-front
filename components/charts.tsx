@@ -10,8 +10,8 @@ import type { Dia, Horario, Monto } from "@/lib/types";
 const axis = { fontSize: 12, fill: "#71717a" };
 
 export function useChartColors() {
-  const { pub } = useConfig();
-  return palette(pub.colorPrimario || "#2563eb");
+  const { color } = useConfig();
+  return palette(color || "#2563eb");
 }
 
 export function SalesAreaChart({ data, height = 280, name = "Total" }: { data: Dia[]; height?: number; name?: string }) {

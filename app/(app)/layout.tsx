@@ -95,7 +95,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
           {!sinFooter && (
             <footer className="pt-8 pb-2 text-center text-xs text-zinc-400 shrink-0">
-              © {new Date().getFullYear()} SH Systems (Tiendas y Bodegas) - Todos los derechos reservados.
+              © {new Date().getFullYear()} JPS Systems (Tiendas y Bodegas) - Todos los derechos reservados.
             </footer>
           )}
 

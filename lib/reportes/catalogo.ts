@@ -4,7 +4,7 @@ import type {
   Asistencia, CierreCaja, ComprasReporte, CuentasPorPagar, FlujoCaja, InventarioReporte, Lote, PageResponse,
   Producto, ProductoInventario, ProductoVenta, VentasReporte,
 } from "@/lib/types";
-import { fmtFechaCorta, fmtFechaHora, fmtMoneda, type Col, type ReportDef } from "./index";
+import { fmtFechaCorta, fmtFechaHora, fmtMoneda, type Col, type Grafico, type ReportDef } from "./index";
 
 export type GrupoReporte = "Ventas" | "Caja" | "Compras" | "Inventario" | "Personal" | "General";
 
@@ -17,6 +17,9 @@ export interface ReporteItem {
   periodo: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   construir: (desde: string, hasta: string, dias?: number) => Promise<ReportDef<any>>;
+  /** Gráfico que se muestra sobre la tabla (opcional). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  grafico?: (filas: any[]) => Grafico | null;
 }
 
 const rango = (d: string, h: string) => [`Periodo: ${fmtFechaCorta(d)} al ${fmtFechaCorta(h)}`];
@@ -31,10 +34,19 @@ function colsMonto(primera: string, cantidadLabel: string, formatoEtiqueta: (s: 
   ];
 }
 
+const top = (xs: { name: string; value: number }[], n = 10) => [...xs].sort((a, b) => b.value - a.value).slice(0, n);
+const agrupar = (xs: { name: string; value: number }[]) => {
+  const m = new Map<string, number>();
+  xs.forEach((x) => m.set(x.name, (m.get(x.name) ?? 0) + x.value));
+  return [...m.entries()].map(([name, value]) => ({ name, value }));
+};
+const conDatos = (g: Grafico): Grafico | null => (g.datos.length ? g : null);
+
 export const REPORTES: ReporteItem[] = [
   {
     id: "ventas-periodo", grupo: "Ventas", titulo: "Ventas por periodo", periodo: true,
     descripcion: "Total vendido día por día con número de ventas.",
+    grafico: (f: { fecha: string; total: number }[]) => conDatos({ tipo: "linea", etiqueta: "Ventas", dinero: true, datos: f.map((x) => ({ name: fmtFechaCorta(x.fecha), value: x.total })) }),
     construir: async (d, h) => {
       const r = await api<VentasReporte>("/api/reportes/ventas", { params: { desde: d, hasta: h } });
       const cols: Col<(typeof r.porDia)[number]>[] = [
@@ -55,6 +67,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "ventas-empleado", grupo: "Ventas", titulo: "Ventas por empleado", periodo: true,
     descripcion: "Rendimiento de cada vendedor en el periodo.",
+    grafico: (f: Fila[]) => conDatos({ tipo: "barras", etiqueta: "Ventas", dinero: true, datos: top(f.map((x) => ({ name: x.etiqueta, value: x.total }))) }),
     construir: async (d, h) => {
       const r = await api<VentasReporte>("/api/reportes/ventas", { params: { desde: d, hasta: h } });
       return {
@@ -67,6 +80,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "ventas-medio", grupo: "Ventas", titulo: "Ventas por medio de pago", periodo: true,
     descripcion: "Efectivo, tarjeta, transferencia y Yape/Plin.",
+    grafico: (f: Fila[]) => conDatos({ tipo: "torta", etiqueta: "Total", dinero: true, datos: f.map((x) => ({ name: medioLabel(x.etiqueta), value: x.total })) }),
     construir: async (d, h) => {
       const r = await api<VentasReporte>("/api/reportes/ventas", { params: { desde: d, hasta: h } });
       return {
@@ -79,6 +93,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "top-productos", grupo: "Ventas", titulo: "Top productos", periodo: true,
     descripcion: "Los 10 productos más vendidos por unidades.",
+    grafico: (f: { nombre: string; unidadesVendidas: number }[]) => conDatos({ tipo: "barras-h", etiqueta: "Unidades", datos: f.map((x) => ({ name: x.nombre, value: x.unidadesVendidas })) }),
     construir: async (d, h) => {
       const r = await api<VentasReporte>("/api/reportes/ventas", { params: { desde: d, hasta: h } });
       const cols: Col<(typeof r.topProductos)[number] & { n: number }>[] = [
@@ -93,6 +108,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "ventas-producto", grupo: "Ventas", titulo: "Ventas por producto", periodo: true,
     descripcion: "Unidades e importe vendido de cada producto, por categoría.",
+    grafico: (f: ProductoVenta[]) => conDatos({ tipo: "barras-h", etiqueta: "Monto", dinero: true, datos: top(f.map((x) => ({ name: x.producto, value: x.monto }))) }),
     construir: async (d, h) => {
       const filas = await api<ProductoVenta[]>("/api/reportes/ventas/productos", { params: { desde: d, hasta: h } });
       const cols: Col<ProductoVenta>[] = [
@@ -108,6 +124,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "cierres-caja", grupo: "Caja", titulo: "Arqueo de caja", periodo: true,
     descripcion: "Aperturas y cierres de caja con efectivo esperado y diferencia.",
+    grafico: (f: CierreCaja[]) => conDatos({ tipo: "barras", etiqueta: "Ventas", dinero: true, datos: f.slice(0, 15).map((x) => ({ name: `${fmtFechaCorta(x.fechaInicio)} · ${x.empleado}`, value: x.totalVentas })) }),
     construir: async (d, h) => {
       const filas = await api<CierreCaja[]>("/api/reportes/caja/cierres", { params: { desde: d, hasta: h } });
       const cols: Col<CierreCaja>[] = [
@@ -129,6 +146,10 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "flujo-caja", grupo: "Caja", titulo: "Flujo de caja", periodo: true,
     descripcion: "Ingresos y egresos manuales registrados en caja.",
+    grafico: (f: { tipo: string; monto: number }[]) => conDatos({ tipo: "barras", etiqueta: "Monto", dinero: true, datos: f.length ? [
+      { name: "Ingresos", value: sumar(f.filter((x) => x.tipo === "INGRESO").map((x) => x.monto)) },
+      { name: "Egresos", value: sumar(f.filter((x) => x.tipo !== "INGRESO").map((x) => x.monto)) },
+    ] : [] }),
     construir: async (d, h) => {
       const r = await api<FlujoCaja>("/api/reportes/caja/flujo", { params: { desde: d, hasta: h } });
       const cols: Col<(typeof r.movimientos)[number]>[] = [
@@ -149,6 +170,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "compras-proveedor", grupo: "Compras", titulo: "Compras por proveedor", periodo: true,
     descripcion: "Monto comprado a cada proveedor en el periodo.",
+    grafico: (f: Fila[]) => conDatos({ tipo: "barras-h", etiqueta: "Compras", dinero: true, datos: top(f.map((x) => ({ name: x.etiqueta, value: x.total }))) }),
     construir: async (d, h) => {
       const r = await api<ComprasReporte>("/api/reportes/compras", { params: { desde: d, hasta: h } });
       return { titulo: "Compras por proveedor", subtitulo: rango(d, h), columnas: colsMonto("Proveedor", "Compras"),
@@ -159,6 +181,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "cuentas-por-pagar", grupo: "Compras", titulo: "Cuentas por pagar", periodo: false,
     descripcion: "Compras a crédito pendientes de pago, con antigüedad.",
+    grafico: (f: { proveedor: string; pendiente: number }[]) => conDatos({ tipo: "barras-h", etiqueta: "Pendiente", dinero: true, datos: top(agrupar(f.map((x) => ({ name: x.proveedor, value: x.pendiente })))) }),
     construir: async () => {
       const r = await api<CuentasPorPagar>("/api/reportes/compras/por-pagar");
       const cols: Col<(typeof r.items)[number]>[] = [
@@ -175,6 +198,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "inventario-valorizado", grupo: "Inventario", titulo: "Inventario valorizado", periodo: false,
     descripcion: "Stock y valor a costo de cada producto activo.",
+    grafico: (f: ProductoInventario[]) => conDatos({ tipo: "torta", etiqueta: "Valor", dinero: true, datos: top(agrupar(f.map((x) => ({ name: x.categoria, value: x.valorizado }))), 8) }),
     construir: async () => {
       const filas = await api<ProductoInventario[]>("/api/reportes/inventario/detalle");
       const cols: Col<ProductoInventario>[] = [
@@ -242,6 +266,7 @@ export const REPORTES: ReporteItem[] = [
   {
     id: "consolidado", grupo: "General", titulo: "Consolidado general", periodo: true,
     descripcion: "Ventas, compras, caja e inventario en un solo cuadro.",
+    grafico: (f: { concepto: string; monto: number }[]) => conDatos({ tipo: "barras", etiqueta: "Monto", dinero: true, datos: f.map((x) => ({ name: x.concepto, value: x.monto })) }),
     construir: async (d, h) => {
       const [v, c, f, inv] = await Promise.all([
         api<VentasReporte>("/api/reportes/ventas", { params: { desde: d, hasta: h } }),

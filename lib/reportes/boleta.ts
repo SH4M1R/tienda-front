@@ -11,6 +11,7 @@ export interface EmpresaBoleta {
   direccion?: string | null;
   departamento?: string | null;
   ciudad?: string | null;
+  telefono?: string | null;
   logo?: string | null;
 }
 type EmpresaForm = EmpresaBoleta;
@@ -123,6 +124,7 @@ function renderBoleta(
   if (empresa.departamento || empresa.ciudad) {
     texto([empresa.departamento, empresa.ciudad].filter(Boolean).join(' - '), { align: 'center', size: 9 });
   }
+  if (empresa.telefono) texto(`Tel: ${empresa.telefono}`, { align: 'center', size: 9 });
 
   linea();
 

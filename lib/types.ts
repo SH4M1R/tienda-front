@@ -108,10 +108,9 @@ export interface Empresa {
   email: string | null; direccion: string | null; departamento: string | null; ciudad: string | null;
   logo: string | null; horaApertura: string | null; horaCierre: string | null; toleranciaMinutos: number | null;
   backupAutomaticoActivo: boolean | null; frecuenciaBackup: string | null; ultimoBackupEnviado: string | null;
-  colorPrimario: string;
 }
 export interface EmpresaPublica {
-  nombreComercial: string | null; razonSocial: string | null; logo: string | null; colorPrimario: string;
+  nombreComercial: string | null; razonSocial: string | null; logo: string | null;
 }
 
 export interface TopProducto { productoId: number; nombre: string; unidadesVendidas: number }

@@ -1,15 +1,16 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { Check, Minus, Plus, Printer, ScanBarcode, ShoppingCart, Trash2, User, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Minus, Plus, ScanBarcode, ShoppingCart, Trash2, User, X } from "lucide-react";
 import { ApiError, api, errorMessage } from "@/lib/api";
 import { useBarcodeScanner, useFetch } from "@/lib/hooks";
 import { money } from "@/lib/format";
-import { COMPROBANTES, MEDIOS_PAGO, medioLabel, type Caja, type Cliente, type MedioPago, type Producto, type TipoComprobante, type TipoUnidad, type Venta } from "@/lib/types";
-import { Alert, Badge, Button, Card, CardHeader, EmptyState, Field, Loading, Modal, cn, inputCls } from "@/components/ui";
+import { COMPROBANTES, MEDIOS_PAGO, type Caja, type Cliente, type MedioPago, type Producto, type TipoComprobante, type TipoUnidad, type Venta } from "@/lib/types";
+import { Badge, Button, Card, CardHeader, EmptyState, Field, Loading, Modal, cn, inputCls } from "@/components/ui";
 import { useFeedback } from "@/components/feedback";
 import ProductSearch from "@/components/ProductSearch";
 import EntitySearch from "@/components/EntitySearch";
+import { CajaCerradaModal } from "@/components/CajaCerradaModal";
 
 interface Line { producto: Producto; cantidad: number; tipo: TipoUnidad }
 const factorOf = (p: Producto) => p.factor ?? p.unidadesCaja ?? 1;
@@ -19,6 +20,7 @@ const canBox = (p: Producto) => p.precioCaja != null && (p.factor != null || p.u
 
 export default function NuevaVentaPage() {
   const toast = useFeedback();
+  const router = useRouter();
   const caja = useFetch<Caja>("/api/caja/actual");
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +32,6 @@ export default function NuevaVentaPage() {
   const [izipay, setIzipay] = useState("");
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [saving, setSaving] = useState(false);
-  const [venta, setVenta] = useState<Venta | null>(null);
   const [pagoOpen, setPagoOpen] = useState(false);
 
   const total = useMemo(() => cart.reduce((a, l) => a + unitPrice(l) * l.cantidad, 0), [cart]);
@@ -71,7 +72,7 @@ export default function NuevaVentaPage() {
   useBarcodeScanner(async (code) => {
     try { addProduct(await api<Producto>(`/api/productos/barras/${encodeURIComponent(code)}`)); }
     catch (e) { toast.error(e instanceof ApiError && e.status === 404 ? `Código ${code} no registrado` : errorMessage(e)); }
-  }, !venta && !pagoOpen);
+  }, !!caja.data && !pagoOpen);
 
   function setLine(i: number, patch: Partial<Line>) {
     setCart((c) => {
@@ -156,6 +157,8 @@ export default function NuevaVentaPage() {
     if (!caja.data) { toast.error("Debe aperturar su caja"); return; }
     if (cart.length === 0) { toast.error("Agregue al menos un producto"); return; }
     if (medio === "EFECTIVO" && (recibido === "" || Number(recibido) < total)) { toast.error("El monto recibido es menor al total"); return; }
+    // Se abre la pestaña ahora (acción del usuario) para que el navegador no bloquee el comprobante; se completa al registrar la venta.
+    const ventanaComprobante = window.open("about:blank", "_blank");
     setSaving(true);
     try {
       const v = await api<Venta>("/api/ventas", {
@@ -165,11 +168,17 @@ export default function NuevaVentaPage() {
           detalles: cart.map((l) => ({ productoId: l.producto.id, cantidad: l.cantidad, tipoVenta: l.tipo })),
         },
       });
-      setVenta(v);
+      const url = `/ventas/boleta?id=${v.id}${v.vuelto ? `&vuelto=${v.vuelto.toFixed(2)}` : ""}`;
+      if (ventanaComprobante) ventanaComprobante.location.href = url;
+      else window.open(url, "_blank");
       setPagoOpen(false);
       setCart([]); setCliente(null); setRecibido(""); setIzipay(""); setComprobante("NOTA_VENTA"); setMedio("EFECTIVO");
-      toast.success(`Venta ${v.comprobante} registrada`);
-    } catch (e) { toast.error(errorMessage(e)); } finally { setSaving(false); }
+      toast.success(`Venta ${v.comprobante} registrada${v.vuelto && v.vuelto > 0 ? ` · Vuelto ${money(v.vuelto)}` : ""}`);
+      setTimeout(() => searchRef.current?.focus(), 50);
+    } catch (e) {
+      ventanaComprobante?.close();
+      toast.error(errorMessage(e));
+    } finally { setSaving(false); }
   }
 
   useEffect(() => { cobrarRef.current = pagoOpen ? cobrar : abrirPago; });
@@ -185,18 +194,21 @@ export default function NuevaVentaPage() {
     catch (e) { toast.error(errorMessage(e)); }
   }
 
-  function nuevaVenta() { setVenta(null); setTimeout(() => searchRef.current?.focus(), 50); }
-
   if (caja.loading) return <Loading />;
+
+  // Sin caja abierta no se puede generar ventas: modal que lleva a Arqueo de caja.
+  if (!caja.data) {
+    return (
+      <CajaCerradaModal
+        open
+        onClose={() => (window.history.length > 1 ? router.back() : router.push("/"))}
+        onIrAArqueo={() => router.push("/caja/arqueo")}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-full w-full p-4 md:p-6 gap-4 overflow-hidden">
-      {!caja.data && (
-        <div className="shrink-0">
-          <Alert tone="amber">No tienes una caja abierta, por lo que no puedes registrar ventas. <Link href="/caja/arqueo" className="font-semibold underline">Aperturar caja</Link></Alert>
-        </div>
-      )}
-
       {/* Cabecera Venta */}
       <Card className="shrink-0 p-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
@@ -301,7 +313,7 @@ export default function NuevaVentaPage() {
               <div className="flex items-end justify-between"><span className="text-sm text-slate-300">Total</span><span className="text-3xl font-semibold">{money(total)}</span></div>
             </div>
 
-            <Button size="lg" className="w-full" onClick={abrirPago} disabled={cart.length === 0 || !caja.data}><ShoppingCart className="h-5 w-5" />Cobrar (F9)</Button>
+            <Button size="lg" className="w-full" onClick={abrirPago} disabled={cart.length === 0}><ShoppingCart className="h-5 w-5" />Cobrar (F9)</Button>
           </div>
         </Card>
       </div>
@@ -335,20 +347,6 @@ export default function NuevaVentaPage() {
           {medio === "TARJETA" && <Field label="Código Izipay" hint="Opcional"><input className={inputCls} value={izipay} onChange={(e) => setIzipay(e.target.value)} maxLength={100} /></Field>}
 
         </div>
-      </Modal>
-
-      <Modal open={!!venta} onClose={nuevaVenta} title="Venta registrada" size="sm"
-        footer={<><Button variant="secondary" onClick={() => window.open(`/ventas/boleta?id=${venta?.id}${venta?.vuelto ? `&vuelto=${venta.vuelto.toFixed(2)}` : ""}`, "_blank")}><Printer className="h-4 w-4" />Imprimir boleta</Button><Button onClick={nuevaVenta}><Check className="h-4 w-4" />Nueva venta</Button></>}>
-        {venta && (
-          <div className="space-y-3">
-            {venta.vuelto != null && venta.vuelto > 0 && <Alert tone="primary">Vuelto a entregar: <b>{money(venta.vuelto)}</b></Alert>}
-            <div className="rounded-lg border border-slate-200 p-3 text-sm">
-              <p className="font-semibold">{COMPROBANTES.find((c) => c.value === venta.tipoVenta)?.label ?? "Nota de Venta"} {venta.comprobante}</p>
-              <p className="text-slate-500">{venta.clienteNombre || "Público general"} · {medioLabel(venta.metodoPago)}</p>
-              <p className="mt-1 text-base font-bold">{money(venta.total)}</p>
-            </div>
-          </div>
-        )}
       </Modal>
     </div>
   );

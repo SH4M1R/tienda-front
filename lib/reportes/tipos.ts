@@ -35,3 +35,12 @@ export interface EmpresaDoc {
 }
 
 export type Formato = "pos80" | "a4" | "excel";
+
+/** Gráfico simple que acompaña a un reporte en pantalla. */
+export interface Grafico {
+  tipo: "linea" | "torta" | "barras" | "barras-h";
+  datos: { name: string; value: number }[];
+  /** true = los valores son soles (S/). */
+  dinero?: boolean;
+  etiqueta: string;
+}

@@ -333,6 +333,7 @@ export default function ProductosPage() {
         open={stockModalOpen}
         producto={productoParaStock}
         onClose={() => setStockModalOpen(false)}
+        onChanged={refrescar}
       />
 
       <ModalAlertaStock isOpen={modalStockBajoOpen} onClose={() => setModalStockBajoOpen(false)} />

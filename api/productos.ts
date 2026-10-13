@@ -45,6 +45,8 @@ export interface LoteProducto {
   diasParaVencer: number | null;
 }
 
+export interface LotePayload { lote: string | null; fechaVencimiento: string | null; stock: number }
+
 export interface FiltroProductos { q?: string; categoriaId?: number; estado?: boolean }
 
 /** URL pública de la imagen del producto (el nombre del archivo cambia con cada imagen nueva, así que sirve de versión). */
@@ -67,6 +69,8 @@ export const productosApi = {
   stockBajo: () => request<Producto[]>('/productos/alertas/stock-bajo'),
   porVencer: (dias: number) => request<LoteProducto[]>('/productos/alertas/por-vencer', { params: { dias } }),
   lotes: (id: number) => request<LoteProducto[]>(`/productos/${id}/lotes`),
+  crearLote: (id: number, data: LotePayload) => request<LoteProducto>(`/productos/${id}/lotes`, { method: 'POST', body: data }),
+  actualizarLote: (id: number, loteId: number, data: LotePayload) => request<LoteProducto>(`/productos/${id}/lotes/${loteId}`, { method: 'PUT', body: data }),
 };
 
 export const categoriasApi = {

@@ -1,8 +1,8 @@
 'use client';
 import { useConfig } from '@/lib/config-context';
 
-/** Color primario vigente (se cambia en Configuración → Apariencia). */
+/** Color primario vigente (se cambia en Configuración; se guarda en este navegador). */
 export function useThemeColor() {
-  const { pub, applyColor } = useConfig();
-  return { primaryColor: pub.colorPrimario || '#2563eb', changeTheme: applyColor };
+  const { color, applyColor } = useConfig();
+  return { primaryColor: color || '#2563eb', changeTheme: applyColor };
 }

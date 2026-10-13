@@ -30,6 +30,7 @@ function BoletaCliente() {
             direccion: empresa?.direccion,
             departamento: empresa?.departamento,
             ciudad: empresa?.ciudad,
+            telefono: empresa?.telefono,
             logo: empresa?.logo ?? pub.logo,
           },
           vuelto,
