@@ -39,6 +39,9 @@ const emptyForm: ProductoPayload = {
 export default function ProductoModal({ open, producto, onClose, onSave }: ProductoModalProps) {
   const [form, setForm] = useState<ProductoPayload>(emptyForm);
   const [vendePorCaja, setVendePorCaja] = useState(false);
+  // El costo se ingresa por caja/paquete; el costo por unidad se calcula con el factor.
+  const [factor, setFactor] = useState<number>(1);
+  const [costoPaquete, setCostoPaquete] = useState<number>(0);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -66,6 +69,9 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
       factor: producto.factor ?? null,
       categoriaId: producto.categoriaId,
     } : emptyForm);
+    const f = producto ? (producto.factor && producto.factor > 0 ? producto.factor : producto.unidadesCaja && producto.unidadesCaja > 0 ? producto.unidadesCaja : 1) : 1;
+    setFactor(f);
+    setCostoPaquete(producto ? Number((producto.precioCompra * f).toFixed(4)) : 0);
     setVendePorCaja(!!producto && !!producto.unidadesCaja && !!producto.precioCaja);
     setArchivo(null);
     setQuitarImagen(false);
@@ -94,17 +100,20 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
     e.preventDefault();
     if (!form.nombre.trim()) return setError('El nombre es obligatorio.');
     if (!form.categoriaId) return setError('Selecciona una categoría.');
+    if (!factor || factor < 1 || !Number.isInteger(factor)) return setError('Ingresa el factor (unidades por caja o paquete, mínimo 1).');
+    if (!(costoPaquete >= 0)) return setError('Ingresa el precio costo.');
     if (!form.precioVenta || form.precioVenta <= 0) return setError('Ingresa el precio de venta.');
-    if (vendePorCaja && (!form.unidadesCaja || form.unidadesCaja <= 0 || !form.precioCaja || form.precioCaja <= 0)) {
-      return setError('Completa unidades y precio de la caja.');
+    if (vendePorCaja && (factor < 2 || !form.precioCaja || form.precioCaja <= 0)) {
+      return setError('Para vender por caja el factor debe ser mayor a 1 y debes indicar el precio de la caja.');
     }
 
     const data: ProductoPayload = {
       ...form,
+      precioCompra: costoUnitario,
       nombre: form.nombre.trim(),
       barras: form.barras?.trim() || null,
-      unidadesCaja: vendePorCaja ? form.unidadesCaja : null,
-      factor: vendePorCaja ? form.unidadesCaja : null,
+      unidadesCaja: vendePorCaja ? factor : null,
+      factor,
       precioCaja: vendePorCaja ? form.precioCaja : null,
     };
 
@@ -120,9 +129,9 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
     }
   };
 
-  const costoUnitario = form.precioCompra > 0 ? form.precioCompra : 0;
+  const costoUnitario = costoPaquete > 0 && factor > 0 ? Number((costoPaquete / factor).toFixed(4)) : 0;
   const gananciaUnidadPct = costoUnitario > 0 ? ((form.precioVenta - costoUnitario) / costoUnitario) * 100 : 0;
-  const costoCaja = costoUnitario * (form.unidadesCaja ?? 0);
+  const costoCaja = costoPaquete;
   const gananciaCajaPct = costoCaja > 0 && form.precioCaja ? ((form.precioCaja - costoCaja) / costoCaja) * 100 : 0;
 
   const imagenActual = !quitarImagen && producto ? urlImagenProducto(producto) : null;
@@ -222,10 +231,19 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
           <div className="space-y-4 pt-2 border-t border-zinc-100">
             <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-400">Precios y Stock</h3>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-1">
-                <label className={labelClass}>Precio costo unidad</label>
-                <input type="number" step="0.01" min="0" value={form.precioCompra} onChange={(e) => set('precioCompra', Number(e.target.value))} className={inputClass} />
+                <label className={labelClass}>Factor (unidades por caja/paquete)</label>
+                <input type="number" min="1" step="1" value={factor || ''} placeholder="Ej. 12"
+                  onChange={(e) => setFactor(e.target.value ? Math.max(0, Math.floor(Number(e.target.value))) : 0)} className={inputClass} />
+              </div>
+              <div className="space-y-1">
+                <label className={labelClass}>Precio costo por caja/paquete</label>
+                <input type="number" step="0.01" min="0" value={costoPaquete} onChange={(e) => setCostoPaquete(Number(e.target.value))} className={inputClass} />
+              </div>
+              <div className="space-y-1">
+                <label className={labelClass}>Precio costo por unidad</label>
+                <input type="text" disabled value={`S/ ${costoUnitario.toFixed(4)}`} className={calculatedInputClass} />
               </div>
               <div className="space-y-1">
                 <label className={labelClass}>Precio venta unidad</label>
@@ -255,7 +273,7 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-400">Presentaciones de Venta</h3>
-                <p className="text-[11px] text-zinc-400 mt-0.5">Actívalo solo si este producto también se vende por caja.</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5">Actívalo si también se vende por caja (usa el factor como unidades por caja).</p>
               </div>
               <ToggleSwitch checked={vendePorCaja} onChange={setVendePorCaja} />
             </div>
@@ -265,13 +283,7 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className={labelClass}>Unidades por caja</label>
-                    <input
-                      type="number" min="1"
-                      value={form.unidadesCaja ?? ''}
-                      onChange={(e) => set('unidadesCaja', e.target.value ? Number(e.target.value) : null)}
-                      className={inputClass}
-                      placeholder="Ej. 12"
-                    />
+                    <input type="text" disabled value={factor > 0 ? factor : ''} className={calculatedInputClass} />
                   </div>
                   <div className="space-y-1">
                     <label className={labelClass}>Precio por caja</label>
@@ -284,9 +296,9 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
                     />
                   </div>
                 </div>
-                {form.precioCaja && form.unidadesCaja ? (
+                {form.precioCaja && factor > 1 ? (
                   <p className="text-xs text-zinc-500 font-medium">
-                    Costo estimado: S/ {costoCaja.toFixed(2)} | Ganancia: <span className={gananciaCajaPct < 0 ? 'text-red-500 font-bold' : 'text-primary font-bold'}>{gananciaCajaPct >= 0 ? '+' : ''}{gananciaCajaPct.toFixed(1)}%</span>
+                    Costo caja: S/ {costoCaja.toFixed(2)} | Ganancia: <span className={gananciaCajaPct < 0 ? 'text-red-500 font-bold' : 'text-primary font-bold'}>{gananciaCajaPct >= 0 ? '+' : ''}{gananciaCajaPct.toFixed(1)}%</span>
                   </p>
                 ) : null}
               </div>

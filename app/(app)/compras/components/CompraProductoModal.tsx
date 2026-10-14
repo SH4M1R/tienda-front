@@ -262,13 +262,13 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
                 className={inputClass}
               >
                 {(!producto || compraPorCajas) && (
-                  <option value="CAJA">Por Caja</option>
+                  <option value="CAJA">Por Caja / Paquete</option>
                 )}
                 <option value="UNIDAD">Por Unidad</option>
               </select>
               {producto && !compraPorCajas && (
                 <p className="text-[11px] text-zinc-400">
-                  Este producto se compra por unidad (no tiene caja definida).
+                  Este producto se compra por unidad (su factor es 1).
                 </p>
               )}
             </div>
@@ -276,7 +276,7 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
             <div className="space-y-1">
-              <label className={labelClass}>{unidadMedida === "CAJA" ? "Cajas Ingresadas" : "Unidades Ingresadas"}</label>
+              <label className={labelClass}>{unidadMedida === "CAJA" ? "Cajas / Paquetes Ingresados" : "Unidades Ingresadas"}</label>
               <div className="relative">
                 <input
                   type="number"
@@ -310,7 +310,7 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
             </div>
 
             <div className="space-y-1">
-              <label className={labelClass}>{unidadMedida === "CAJA" ? "Precio de Compra (por caja)" : "Precio de Compra (por unidad)"}</label>
+              <label className={labelClass}>{unidadMedida === "CAJA" ? "Precio de Compra (por caja/paquete)" : "Precio de Compra (por unidad)"}</label>
               <input
                 type="number"
                 step="any"
