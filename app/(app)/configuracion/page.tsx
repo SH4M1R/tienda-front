@@ -366,16 +366,27 @@ export default function ConfiguracionPage() {
             </span>
 
             <div className="w-full h-28 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 flex items-center justify-center p-2 overflow-hidden">
-              {form.logo ? (
-                <img src={form.logo} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
-              ) : (
-                <span className="text-xs text-zinc-400">Sin logo cargado</span>
-              )}
+              <img
+                src={form.logo || '/JPSMARKETBANNER.png'}
+                alt="Logo Preview"
+                className="max-w-full max-h-full object-contain"
+                onError={(e) => {
+                  // Si la URL asignada falla al cargar (404/broken link), usa la imagen estática por defecto
+                  e.currentTarget.src = '/JPSMARKETBANNER.png';
+                }}
+              />
             </div>
 
             <div className="space-y-1">
-              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e)} className="block w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 file:cursor-pointer" />
-              <p className="text-[10px] text-zinc-400 leading-tight">Muestra principal en la barra superior o reportes.</p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e)}
+                className="block w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 file:cursor-pointer"
+              />
+              <p className="text-[10px] text-zinc-400 leading-tight">
+                Muestra principal en la barra superior o reportes.
+              </p>
             </div>
           </div>
 

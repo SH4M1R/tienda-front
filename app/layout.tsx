@@ -9,6 +9,11 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "JPS Market",
   description: "Intranet administrativa de tienda",
+  icons: {
+    icon: "/JPSSYSTEMS.png", // Icono principal de la pestaña (favicon)
+    shortcut: "/JPSSYSTEMS.png",
+    apple: "/JPSSYSTEMS.png",
+  },
 };
 
 // Aplica el color guardado antes de pintar para evitar el "parpadeo" del color por defecto
@@ -17,7 +22,9 @@ const themeScript = `try{var c=localStorage.getItem('tienda_primary');if(c){docu
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full">
         <Providers>{children}</Providers>
       </body>
