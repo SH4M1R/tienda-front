@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  // ... resto de tu configuración
+  trailingSlash: true, // <-- Agrega esta línea
 };
 
-export default nextConfig; // <-- Cambia module.exports por export default
+export default nextConfig;
