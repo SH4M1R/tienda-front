@@ -35,7 +35,7 @@ const limpiar = (d: EmpresaRaw | undefined): EmpresaForm => ({
   direccion: d?.direccion ?? '',
   departamento: d?.departamento ?? '',
   ciudad: d?.ciudad ?? '',
-  logo: d?.logo ?? '',
+  logo: d?.logo ?? '/JPSMARKETBANNER.png',
   horaApertura: d?.horaApertura ?? '',
   horaCierre: d?.horaCierre ?? '',
   toleranciaMinutos: d?.toleranciaMinutos ?? 10,
