@@ -312,79 +312,8 @@ export default function ConfiguracionPage() {
               <p className="text-[11px] text-zinc-400">El correo emisor se configura en el servidor; el receptor es el correo de la empresa. Guarda los cambios para aplicar la frecuencia.</p>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-6">
-          {/* Logo de la Empresa */}
-          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
-            <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
-              <Upload size={18} className="text-primary" />
-              Logo de la Tienda
-            </span>
-
-            <div className="w-full h-28 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 flex items-center justify-center p-2 overflow-hidden">
-              {form.logo ? (
-                <img src={form.logo} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
-              ) : (
-                <span className="text-xs text-zinc-400">Sin logo cargado</span>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e)} className="block w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 file:cursor-pointer" />
-            </div>
-          </div>
-
-          {/* Carpeta de imágenes de productos */}
-          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-3">
-            <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
-              <FolderOpen size={18} className="text-primary" />
-              Imágenes de productos
-            </span>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-600">Carpeta de almacenamiento</label>
-              <input
-                name="rutaImagenes"
-                value={form.rutaImagenes}
-                onChange={handleChange}
-                placeholder="Ej. D:\tienda\imagenes  o  /var/tienda/imagenes"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-300 bg-zinc-50 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Color del Tema */}
-          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
-            <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
-              <Paintbrush size={18} className="text-primary" />
-              Color del Tema
-            </span>
-
-            <div className="grid grid-cols-4 gap-3 pt-1">
-              {PRESET_COLORS.map((c) => {
-                const isActive = color.toLowerCase() === c.value.toLowerCase();
-                return (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => cambiarColor(c.value)}
-                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
-                        isActive ? 'border-zinc-800 scale-105 shadow-sm' : 'border-transparent group-hover:scale-105'
-                      }`}
-                      style={{ backgroundColor: c.value }}
-                    >
-                      {isActive && <Check size={16} className="text-white drop-shadow-xs" />}
-                    </div>
-                    <span className="text-[10px] font-medium text-zinc-600">{c.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-                    {/* Sucursales */}
+          {/* Sucursales */}
           <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
@@ -399,6 +328,7 @@ export default function ConfiguracionPage() {
                 <Plus size={14} /> Nueva
               </button>
             </div>
+            <p className="text-xs text-zinc-500">Origen y destino de los traslados.</p>
             {sucursales.length === 0 ? (
               <div className="py-6 text-center text-sm text-zinc-400">Sin sucursales registradas.</div>
             ) : (
@@ -424,6 +354,81 @@ export default function ConfiguracionPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Logo de la Empresa */}
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
+            <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
+              <Upload size={18} className="text-primary" />
+              Logo de la Tienda
+            </span>
+
+            <div className="w-full h-28 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 flex items-center justify-center p-2 overflow-hidden">
+              {form.logo ? (
+                <img src={form.logo} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+              ) : (
+                <span className="text-xs text-zinc-400">Sin logo cargado</span>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e)} className="block w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 file:cursor-pointer" />
+              <p className="text-[10px] text-zinc-400 leading-tight">Muestra principal en la barra superior o reportes.</p>
+            </div>
+          </div>
+
+          {/* Carpeta de imágenes de productos */}
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-3">
+            <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
+              <FolderOpen size={18} className="text-primary" />
+              Imágenes de productos
+            </span>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-zinc-600">Carpeta de almacenamiento</label>
+              <input
+                name="rutaImagenes"
+                value={form.rutaImagenes}
+                onChange={handleChange}
+                placeholder="Ej. D:\tienda\imagenes  o  /var/tienda/imagenes"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-300 bg-zinc-50 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              />
+              <p className="text-[10px] text-zinc-400 leading-tight">Ruta en el equipo donde corre el servidor. Se crea si no existe. Las imágenes no tienen límite de tamaño.</p>
+            </div>
+          </div>
+
+          {/* Color del Tema */}
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
+            <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
+              <Paintbrush size={18} className="text-primary" />
+              Color del Tema
+            </span>
+            <p className="text-xs text-zinc-500">Selecciona el color de acento de la interfaz. Se aplica al instante y se guarda solo en este navegador.</p>
+
+            <div className="grid grid-cols-4 gap-3 pt-1">
+              {PRESET_COLORS.map((c) => {
+                const isActive = color.toLowerCase() === c.value.toLowerCase();
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => cambiarColor(c.value)}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+                        isActive ? 'border-zinc-800 scale-105 shadow-sm' : 'border-transparent group-hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: c.value }}
+                    >
+                      {isActive && <Check size={16} className="text-white drop-shadow-xs" />}
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-600">{c.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

@@ -51,7 +51,7 @@ export interface FiltroProductos { q?: string; categoriaId?: number; estado?: bo
 
 /** URL pública de la imagen del producto (el nombre del archivo cambia con cada imagen nueva, así que sirve de versión). */
 export const urlImagenProducto = (p: Pick<Producto, 'id' | 'imagen'>): string | null =>
-  p.imagen ? `${API_BASE}/api/productos/${p.id}/imagen?v=${encodeURIComponent(p.imagen)}` : null;
+  p.imagen?.startsWith('data:') ? p.imagen : p.imagen ? `${API_BASE}/api/productos/${p.id}/imagen?v=${encodeURIComponent(p.imagen)}` : null;
 
 export const productosApi = {
   subirImagen: (id: number, archivo: File) => apiUpload<Producto>(`/api/productos/${id}/imagen`, 'archivo', archivo),

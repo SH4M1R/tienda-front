@@ -1,3 +1,6 @@
+import { mockBackupSql, mockRequest, mockSubirImagen } from "@/mock/server";
+
+/** Modo demostración: todas las llamadas se resuelven en memoria (src/mock), sin backend. */
 export const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8020").replace(/\/$/, "");
 const TOKEN_KEY = "tienda_token";
 
@@ -27,41 +30,13 @@ let unauthorizedHandler: (() => void) | null = null;
 export function setUnauthorizedHandler(fn: (() => void) | null) { unauthorizedHandler = fn; }
 
 export async function api<T = unknown>(path: string, opts: Opts = {}): Promise<T> {
-  const url = new URL(API_BASE + path);
-  if (opts.params) {
-    for (const [k, v] of Object.entries(opts.params)) {
-      if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
-    }
-  }
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
-  const token = tokenStore.get();
-  if (token && opts.auth !== false) headers.Authorization = `Bearer ${token}`;
-
-  let res: Response;
+  const method = opts.method ?? (opts.body !== undefined ? "POST" : "GET");
   try {
-    res = await fetch(url, {
-      method: opts.method ?? (opts.body !== undefined ? "POST" : "GET"),
-      headers,
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-      signal: opts.signal,
-    });
+    return await mockRequest<T>(method, path, opts.params, opts.body, opts.auth !== false);
   } catch (e) {
-    if (e instanceof DOMException && e.name === "AbortError") throw e;
-    throw new ApiError(0, "No se pudo conectar con el servidor. Verifique que el backend esté en ejecución.");
+    if (e instanceof ApiError && e.status === 401 && opts.auth !== false) unauthorizedHandler?.();
+    throw e;
   }
-
-  if (res.status === 204) return undefined as T;
-  const text = await res.text();
-  let data: unknown = null;
-  if (text) { try { data = JSON.parse(text); } catch { data = null; } }
-
-  if (!res.ok) {
-    if (res.status === 401 && opts.auth !== false) unauthorizedHandler?.();
-    const d = data as { message?: string; errors?: Record<string, string> } | null;
-    throw new ApiError(res.status, d?.message ?? `Error ${res.status}`, d?.errors);
-  }
-  return data as T;
 }
 
 export function errorMessage(e: unknown): string {
@@ -75,49 +50,23 @@ export function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : "Ocurrió un error inesperado";
 }
 
-/** Descarga un archivo protegido (con JWT) y lo guarda con el nombre que indique el servidor. */
+/** Descarga de la copia de seguridad (en modo demostración se genera en el navegador). */
 export async function apiDownload(path: string, nombrePorDefecto: string): Promise<void> {
-  const headers: Record<string, string> = {};
-  const token = tokenStore.get();
-  if (token) headers.Authorization = `Bearer ${token}`;
-  let res: Response;
-  try { res = await fetch(API_BASE + path, { headers }); }
-  catch { throw new ApiError(0, "No se pudo conectar con el servidor. Verifique que el backend esté en ejecución."); }
-  if (!res.ok) {
-    if (res.status === 401) unauthorizedHandler?.();
-    let msg = `Error ${res.status}`;
-    try { msg = ((await res.json()) as { message?: string }).message ?? msg; } catch { /* sin cuerpo JSON */ }
-    throw new ApiError(res.status, msg);
-  }
-  const disp = res.headers.get("Content-Disposition") ?? "";
-  const nombre = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disp)?.[1] ?? nombrePorDefecto;
-  const url = URL.createObjectURL(await res.blob());
+  if (!tokenStore.get()) throw new ApiError(401, "Sesión no válida");
+  void path;
+  const { nombre, contenido } = mockBackupSql();
+  const url = URL.createObjectURL(new Blob([contenido], { type: "application/sql" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = decodeURIComponent(nombre);
+  a.download = nombre || nombrePorDefecto;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
 }
 
-/** Subida multipart (archivo) con JWT; el navegador define el Content-Type con su boundary. */
+/** Subida de archivo (imagen de producto): se guarda en memoria como data-URL. */
 export async function apiUpload<T = unknown>(path: string, campo: string, archivo: File): Promise<T> {
-  const fd = new FormData();
-  fd.append(campo, archivo);
-  const headers: Record<string, string> = { Accept: "application/json" };
-  const token = tokenStore.get();
-  if (token) headers.Authorization = `Bearer ${token}`;
-  let res: Response;
-  try { res = await fetch(API_BASE + path, { method: "POST", headers, body: fd }); }
-  catch { throw new ApiError(0, "No se pudo conectar con el servidor. Verifique que el backend esté en ejecución."); }
-  const text = await res.text();
-  let data: unknown = null;
-  if (text) { try { data = JSON.parse(text); } catch { data = null; } }
-  if (!res.ok) {
-    if (res.status === 401) unauthorizedHandler?.();
-    const d = data as { message?: string } | null;
-    throw new ApiError(res.status, d?.message ?? `Error ${res.status}`);
-  }
-  return data as T;
+  void campo;
+  return (await mockSubirImagen(path, archivo)) as T;
 }

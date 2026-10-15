@@ -18,8 +18,8 @@ export function palette(hex: string): string[] {
 }
 
 export const PRESET_COLORS = [
-  { name: "Azul", value: "oklch(42.4% 0.199 265.638)" }, { name: "Índigo", value: "#4f46e5" },
-  { name: "Rojo", value: "#dc2626" }, { name: "Marrón", value: "oklch(55.4% 0.135 66.442)" },
-  { name: "Ámbar", value: "#d97706" }, { name: "Verde", value: "#16a34a" },
-  { name: "Cian", value: "#0891b2" }, { name: "Pizarra", value: "#334155" },
+  { name: "Azul", value: "#2563eb" }, { name: "Índigo", value: "#4f46e5" }, { name: "Violeta", value: "#7c3aed" },
+  { name: "Rosa", value: "#db2777" }, { name: "Rojo", value: "#dc2626" }, { name: "Naranja", value: "#ea580c" },
+  { name: "Ámbar", value: "#d97706" }, { name: "Verde", value: "#16a34a" }, { name: "Esmeralda", value: "#059669" },
+  { name: "Turquesa", value: "#0d9488" }, { name: "Cian", value: "#0891b2" }, { name: "Pizarra", value: "#334155" },
 ];
