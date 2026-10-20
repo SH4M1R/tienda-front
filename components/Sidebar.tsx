@@ -209,7 +209,7 @@ export default function Sidebar({ onClose, collapsed, onToggleCollapse, onCajaCe
       <div className={`hidden md:flex items-center border-b border-white px-3 py-3 ${collapsed ? 'flex-col gap-2 justify-center' : 'justify-between'}`}>
         <div className={`flex items-center gap-2 p-0.5 ${collapsed ? 'justify-center' : 'flex-1 min-w-0 mr-1'}`}>
           <a href="https://wa.me/51907845855" title="CONTACTA CON JPS SYSTEMS" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-            <img src="/jpssystems.png"
+            <img src="/JPSSYSTEMS.png"
               alt="CONTACTA CON JPS SYSTEMS"
               className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/30 bg-white hover:opacity-90 transition-opacity cursor-pointer"
               onError={(e) => {
