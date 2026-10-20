@@ -26,28 +26,24 @@ type EmpresaRaw = Partial<{ [K in keyof EmpresaForm]: EmpresaForm[K] | null }> &
   [k: string]: unknown;
 };
 
-const limpiar = (d: EmpresaRaw | undefined): EmpresaForm => {
-  let logoUrl = '/JPSMARKETBANNER.png';
-
-  return {
-    ruc: d?.ruc ?? '',
-    razonSocial: d?.razonSocial ?? '',
-    nombreComercial: d?.nombreComercial ?? '',
-    telefono: d?.telefono ?? '',
-    email: d?.email ?? '',
-    direccion: d?.direccion ?? '',
-    departamento: d?.departamento ?? '',
-    ciudad: d?.ciudad ?? '',
-    logo: logoUrl,
-    horaApertura: d?.horaApertura ?? '',
-    horaCierre: d?.horaCierre ?? '',
-    toleranciaMinutos: d?.toleranciaMinutos ?? 10,
-    rutaImagenes: d?.rutaImagenes ?? '',
-    backupAutomaticoActivo: d?.backupAutomaticoActivo ?? true,
-    frecuenciaBackup: d?.frecuenciaBackup ?? 'DIARIO',
-    ultimoBackupEnviado: d?.ultimoBackupEnviado ?? '',
-  };
-};
+const limpiar = (d: EmpresaRaw | undefined): EmpresaForm => ({
+  ruc: d?.ruc ?? '',
+  razonSocial: d?.razonSocial ?? '',
+  nombreComercial: d?.nombreComercial ?? '',
+  telefono: d?.telefono ?? '',
+  email: d?.email ?? '',
+  direccion: d?.direccion ?? '',
+  departamento: d?.departamento ?? '',
+  ciudad: d?.ciudad ?? '',
+  logo: d?.logo ?? '',
+  horaApertura: d?.horaApertura ?? '',
+  horaCierre: d?.horaCierre ?? '',
+  toleranciaMinutos: d?.toleranciaMinutos ?? 10,
+  rutaImagenes: d?.rutaImagenes ?? '',
+  backupAutomaticoActivo: d?.backupAutomaticoActivo ?? true,
+  frecuenciaBackup: d?.frecuenciaBackup ?? 'DIARIO',
+  ultimoBackupEnviado: d?.ultimoBackupEnviado ?? '',
+});
 
 export const empresaApi = {
   obtener: async (): Promise<{ form: EmpresaForm; raw: EmpresaRaw }> => {

@@ -34,3 +34,37 @@ Las fechas se generan relativas al día actual, así que dashboard y reportes si
   (ej. `http://localhost:3020/login?reset-demo`) o borra los datos del sitio.
 - El código para conectar el backend real está intacto en el proyecto `tienda-front`; aquí solo cambian `src/lib/api.ts`
   (redirige a `src/mock`) y los textos de marca (JPS Systems).
+
+## Estructura (importante)
+El proyecto usa la carpeta `src/` (`src/app`, `src/components`, `src/lib`, `src/mock`…) y el alias `@/*` apunta a `./src/*`
+(ver `tsconfig.json`). **No mezcles** una carpeta `app/` en la raíz con `src/app`: Next.js usaría la de la raíz e ignoraría `src/`.
+
+## Desplegar (Vercel, recomendado)
+1. Sube el proyecto a GitHub (el `.gitignore` ya excluye `node_modules` y `.next`; **sí** incluye `public/` con tus logos).
+2. En vercel.com → *Add New… → Project* → importa el repositorio. Framework: **Next.js** (autodetectado). No requiere variables de entorno.
+3. *Deploy*. Cada `git push` vuelve a publicar.
+
+Otras opciones: `npm run build && npm run start` en cualquier servidor con Node ≥ 20.9 (puerto 3020).
+Nota: los datos de demostración viven en el navegador de cada visitante (localStorage), no en el servidor.
+
+## Estructura esperada (importante)
+El alias `@/` apunta a `src/`, así que el proyecto debe quedar así (todo dentro de `src/`):
+```
+tienda-front-demo/
+├─ public/            ← aquí van JPSMARKETBANNER.png y jpssystems.png
+├─ src/
+│  ├─ app/  components/  lib/  api/  hooks/  mock/  ...
+├─ package.json  tsconfig.json  next.config.mjs  postcss.config.mjs  eslint.config.mjs
+```
+Si ves `Can't resolve '@/components/...'`, es que `app/`, `components/`, `lib/`… quedaron en la raíz en vez de dentro de `src/`.
+
+## Desplegar
+**Vercel (recomendado, sin variables de entorno):** sube la carpeta a GitHub → vercel.com → *Add New Project* → importa el repo
+(Framework: Next.js, todo por defecto) → *Deploy*. Cada `git push` vuelve a desplegar.
+
+**Probar el build de producción en local:**
+```bash
+npm ci && npm run build && npm start      # http://localhost:3020
+```
+Notas: el build descarga la fuente Geist de Google Fonts (necesita internet; Vercel lo tiene). Todas las páginas se generan
+estáticas, y no hace falta backend ni variables de entorno.

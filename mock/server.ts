@@ -3,11 +3,11 @@
  * Boot, así que todas las pantallas funcionan igual pero sin conexión. Los cambios viven mientras la pestaña
  * esté abierta; al recargar la página los datos vuelven a su estado inicial.
  */
-import { ApiError, tokenStore } from "../lib/api"
+import { ApiError, tokenStore } from "@/lib/api";
 import type {
   Asistencia, Caja, Cliente, Compra, DetalleCompra, DetalleTraslado, DetalleVenta, Empleado, MovimientoCaja,
   Proveedor, Traslado, Venta,
-} from "../lib/types";
+} from "@/lib/types";
 import { addDays, crearDb, isoDate, isoDateTime, permisosDeRol, round2, type Db, type EmpleadoDb, type LoteDb, type ProductoDb } from "./seed";
 
 type Q = Record<string, string | undefined>;

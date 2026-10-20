@@ -7,8 +7,8 @@
 import type {
   Asistencia, Caja, Categoria, Cliente, Compra, DetalleCompra, DetalleVenta, Empleado, Empresa, MedioPago,
   MovimientoCaja, Proveedor, Sucursal, Traslado, Venta,
-} from "../lib/types";
-import { ALL_ITEMS } from "../lib/nav";
+} from "@/lib/types";
+import { ALL_ITEMS } from "@/lib/nav";
 
 export interface ProductoDb {
   id: number; nombre: string; precioCompra: number; precioVenta: number; stockMinimo: number; estado: boolean;
