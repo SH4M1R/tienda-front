@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Minus, Plus, ScanBarcode, ShoppingCart, Trash2, User, X } from "lucide-react";
+import { Check, Minus, Pencil, Plus, ScanBarcode, ShoppingCart, Trash2, User, X } from "lucide-react";
 import { ApiError, api, errorMessage } from "@/lib/api";
 import { useBarcodeScanner, useFetch } from "@/lib/hooks";
 import { money } from "@/lib/format";
@@ -9,14 +9,18 @@ import { COMPROBANTES, MEDIOS_PAGO, type Caja, type Cliente, type MedioPago, typ
 import { Badge, Button, Card, CardHeader, EmptyState, Field, Loading, Modal, cn, inputCls } from "@/components/ui";
 import { useFeedback } from "@/components/feedback";
 import ProductSearch from "@/components/ProductSearch";
+import PesoModal from "@/components/PesoModal";
+import { fmtPeso, gramosAPrecio } from "@/lib/peso";
 import EntitySearch from "@/components/EntitySearch";
 import { CajaCerradaModal } from "@/components/CajaCerradaModal";
 
 interface Line { producto: Producto; cantidad: number; tipo: TipoUnidad }
 const factorOf = (p: Producto) => p.factor ?? p.unidadesCaja ?? 1;
+// PESO: cantidad = gramos y precioVenta = precio por kg. Para el resto, precio por unidad/caja.
 const unitPrice = (l: Line) => (l.tipo === "CAJA" ? l.producto.precioCaja ?? 0 : l.producto.precioVenta);
+const lineTotal = (l: Line) => (l.tipo === "PESO" ? gramosAPrecio(l.producto.precioVenta, l.cantidad) : unitPrice(l) * l.cantidad);
 const unitsOf = (l: Line) => l.cantidad * (l.tipo === "CAJA" ? factorOf(l.producto) : 1);
-const canBox = (p: Producto) => p.precioCaja != null && (p.factor != null || p.unidadesCaja != null);
+const canBox = (p: Producto) => !p.porPeso && p.precioCaja != null && (p.factor != null || p.unidadesCaja != null);
 
 export default function NuevaVentaPage() {
   const toast = useFeedback();
@@ -34,8 +38,11 @@ export default function NuevaVentaPage() {
   const [saving, setSaving] = useState(false);
   const [pagoOpen, setPagoOpen] = useState(false);
 
-  const total = useMemo(() => cart.reduce((a, l) => a + unitPrice(l) * l.cantidad, 0), [cart]);
-  const items = useMemo(() => cart.reduce((a, l) => a + l.cantidad, 0), [cart]);
+  // Producto por peso pendiente de pesar (index = línea que se edita, o null si se agrega)
+  const [pesoTarget, setPesoTarget] = useState<{ producto: Producto; index: number | null; n: number } | null>(null);
+
+  const total = useMemo(() => Math.round(cart.reduce((a, l) => a + lineTotal(l), 0) * 100) / 100, [cart]);
+  const items = useMemo(() => cart.reduce((a, l) => a + (l.tipo === "PESO" ? 1 : l.cantidad), 0), [cart]);
   const vuelto = medio === "EFECTIVO" && recibido !== "" ? Number(recibido) - total : null;
 
   const addProduct = useCallback((p: Producto) => {
@@ -43,6 +50,8 @@ export default function NuevaVentaPage() {
       toast.error(`El producto "${p.nombre}" no tiene stock disponible`);
       return;
     }
+
+    if (p.porPeso) { setPesoTarget((t) => ({ producto: p, index: null, n: (t?.n ?? 0) + 1 })); return; }
 
     setCart((c) => {
       // Calcular unidades totales ya ocupadas en el carrito para este producto
@@ -67,6 +76,27 @@ export default function NuevaVentaPage() {
     setFlash(p.id);
     setTimeout(() => setFlash((f) => (f === p.id ? null : f)), 700);
   }, [toast]);
+
+  /** Confirma el peso del modal: agrega (o suma al existente) o reemplaza la línea que se edita. */
+  function confirmarPeso(gramos: number) {
+    const t = pesoTarget;
+    if (!t) return;
+    const p = t.producto;
+    setCart((c) => {
+      if (t.index !== null) return c.map((l, k) => (k === t.index ? { ...l, cantidad: gramos } : l));
+      const i = c.findIndex((l) => l.producto.id === p.id && l.tipo === "PESO");
+      if (i >= 0) return c.map((l, k) => (k === i ? { ...l, cantidad: l.cantidad + gramos } : l));
+      return [...c, { producto: p, cantidad: gramos, tipo: "PESO" }];
+    });
+    setPesoTarget(null);
+    setFlash(p.id);
+    setTimeout(() => setFlash((f) => (f === p.id ? null : f)), 700);
+  }
+  // Peso máximo para el modal: stock menos lo que ya hay en el carrito (sin contar la línea que se edita)
+  const pesoMax = pesoTarget
+    ? pesoTarget.producto.stockActual - cart.reduce((a, l, k) => (l.producto.id === pesoTarget.producto.id && k !== pesoTarget.index ? a + unitsOf(l) : a), 0)
+    : 0;
+  const pesoInicial = pesoTarget?.index != null ? cart[pesoTarget.index]?.cantidad ?? 0 : 0;
 
   // Pistola de códigos de barras cuando el cursor no está en un campo de texto
   useBarcodeScanner(async (code) => {
@@ -264,6 +294,25 @@ export default function NuevaVentaPage() {
                     const maxAllowedCount = Math.floor(maxAllowedUnits / factor);
                     const isPlusDisabled = l.cantidad >= maxAllowedCount;
 
+                    if (l.tipo === "PESO") {
+                      return (
+                        <li key={`${l.producto.id}-${l.tipo}`} className={cn("grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 px-5 py-3 transition-colors sm:grid-cols-[1fr_auto_auto]", flash === l.producto.id && "bg-primary-50")}>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900">{l.producto.nombre}</p>
+                            <p className="text-xs text-slate-500">{money(l.producto.precioVenta)} por kg {over && <Badge tone="red">Stock disponible: {fmtPeso(l.producto.stockActual)}</Badge>}</p>
+                          </div>
+                          <button type="button" onClick={() => setPesoTarget({ producto: l.producto, index: i, n: 0 })}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100" aria-label="Cambiar peso">
+                            {fmtPeso(l.cantidad)}<Pencil className="h-3.5 w-3.5 text-slate-400" />
+                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="w-24 text-right text-sm font-semibold tabular-nums">{money(lineTotal(l))}</span>
+                            <button onClick={() => setCart((c) => c.filter((_, k) => k !== i))} className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Eliminar"><X className="h-4 w-4" /></button>
+                          </div>
+                        </li>
+                      );
+                    }
+
                     return (
                       <li key={`${l.producto.id}-${l.tipo}`} className={cn("grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 px-5 py-3 transition-colors sm:grid-cols-[1fr_auto_auto_auto]", flash === l.producto.id && "bg-primary-50")}>
                         <div className="min-w-0">
@@ -292,7 +341,7 @@ export default function NuevaVentaPage() {
                         </div>
 
                         <div className="flex items-center justify-end gap-2">
-                          <span className="w-24 text-right text-sm font-semibold tabular-nums">{money(unitPrice(l) * l.cantidad)}</span>
+                          <span className="w-24 text-right text-sm font-semibold tabular-nums">{money(lineTotal(l))}</span>
                           <button onClick={() => setCart((c) => c.filter((_, k) => k !== i))} className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Eliminar"><X className="h-4 w-4" /></button>
                         </div>
                       </li>
@@ -317,6 +366,11 @@ export default function NuevaVentaPage() {
           </div>
         </Card>
       </div>
+
+      {pesoTarget && (
+        <PesoModal key={`${pesoTarget.producto.id}-${pesoTarget.index}-${pesoTarget.n}`} nombre={pesoTarget.producto.nombre} precioKg={pesoTarget.producto.precioVenta}
+          maxGramos={pesoMax} gramosIniciales={pesoInicial} onConfirm={confirmarPeso} onClose={() => setPesoTarget(null)} />
+      )}
 
       <Modal open={pagoOpen} onClose={() => !saving && setPagoOpen(false)} title="Método de pago" size="sm"
         footer={<><Button variant="secondary" onClick={() => setPagoOpen(false)} disabled={saving}>Cancelar</Button>

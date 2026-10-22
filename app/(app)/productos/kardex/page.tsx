@@ -9,6 +9,7 @@ import { useConfig } from '@/lib/config-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Kardex } from '@/lib/types';
 import type { FilaKardex } from '@/lib/reportes/kardexPdf';
+import { fmtStock } from '@/lib/peso';
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
@@ -189,7 +190,7 @@ export default function KardexPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <span className="inline-block text-[11px] font-medium text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-md border border-zinc-200">
-                        Stock: {p.stockActual}
+                        Stock: {fmtStock(p, p.stockActual)}
                       </span>
                     </div>
                   </button>

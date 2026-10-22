@@ -3,6 +3,7 @@ import { Calendar, FileText, Download, Printer, X, Loader2, Clock, Search, Packa
 import { productosApi, type LoteProducto } from '@/api/productos';
 import { exportarReporte, previsualizarReporte, type Col, type Formato, type ReportDef } from '@/lib/reportes';
 import { useEmpresaDoc } from '@/hooks/useEmpresaDoc';
+import { fmtStock } from '@/lib/peso';
 
 interface ModalProductosPorVencerProps {
   isOpen: boolean;
@@ -41,7 +42,7 @@ export const ModalProductosPorVencer: React.FC<ModalProductosPorVencerProps> = (
       const cols: Col<LoteProducto>[] = [
         { header: 'Producto', width: 5, render: (l) => l.productoNombre },
         { header: 'Lote', width: 2.5, render: (l) => l.lote ?? '', pos: false },
-        { header: 'Stock', width: 1.5, align: 'right', render: (l) => String(l.stock), value: (l) => l.stock },
+        { header: 'Stock', width: 1.5, align: 'right', render: (l) => fmtStock(l, l.stock), value: (l) => l.stock },
         { header: 'Vence', width: 2.5, align: 'right', render: (l) => (l.fechaVencimiento ? new Date(l.fechaVencimiento + 'T00:00:00').toLocaleDateString('es-PE') : '-') },
       ];
       const def: ReportDef<LoteProducto> = {
@@ -174,7 +175,7 @@ export const ModalProductosPorVencer: React.FC<ModalProductosPorVencerProps> = (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-4 py-2.5 font-semibold text-slate-800">{p.productoNombre}</td>
                       <td className="px-4 py-2.5 text-slate-600">{p.lote ?? '-'}</td>
-                      <td className="px-4 py-2.5 text-right font-medium text-slate-700">{p.stock}</td>
+                      <td className="px-4 py-2.5 text-right font-medium text-slate-700">{fmtStock(p, p.stock)}</td>
                       <td className="px-4 py-2.5 text-right font-bold text-red-500">
                         {p.fechaVencimiento ? new Date(p.fechaVencimiento + 'T00:00:00').toLocaleDateString('es-PE') : '-'}
                       </td>

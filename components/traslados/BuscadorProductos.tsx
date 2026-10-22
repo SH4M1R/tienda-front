@@ -18,7 +18,7 @@ export default function BuscadorProductos({ onSelect }: Props) {
   useEffect(() => {
     if (!consulta) { setResultados([]); return; }
     let activo = true;
-    productosApi.buscar(consulta, 8).then((r) => { if (activo) setResultados(r); }).catch(() => { if (activo) setResultados([]); });
+    productosApi.buscar(consulta, 8).then((r) => { if (activo) setResultados(r.filter((p) => !p.porPeso)); }).catch(() => { if (activo) setResultados([]); });
     return () => { activo = false; };
   }, [consulta]);
 

@@ -2,6 +2,7 @@ import type { jsPDF as JsPDF } from 'jspdf';
 import type { Venta } from '@/lib/types';
 import { medioLabel } from '@/lib/types';
 import { montoEnLetras } from './montoEnLetras';
+import { fmtPeso } from '@/lib/peso';
 
 /** Datos de la empresa que usa el comprobante. */
 export interface EmpresaBoleta {
@@ -167,8 +168,8 @@ function renderBoleta(
 
     const yInicialFila = y;
     doc.text(lineasNombre, X_PROD, y);
-    doc.text(String(d.cantidad), X_CANT_R, yInicialFila, { align: 'right' });
-    doc.text(d.precioUnitario.toFixed(2), X_PUNIT_R, yInicialFila, { align: 'right' });
+    doc.text(d.tipoVenta === 'PESO' ? fmtPeso(d.cantidad) : String(d.cantidad), X_CANT_R, yInicialFila, { align: 'right' });
+    doc.text(d.precioUnitario.toFixed(2) + (d.tipoVenta === 'PESO' ? '/kg' : ''), X_PUNIT_R, yInicialFila, { align: 'right' });
     doc.text(d.subtotal.toFixed(2), X_IMP_R, yInicialFila, { align: 'right' });
 
     y += Math.max(lineasNombre.length * 3.8, 3.8) + 1.5;

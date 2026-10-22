@@ -12,6 +12,7 @@ import StockModal from './components/StockModal';
 import Paginacion from '@/components/Paginacion';
 import { ModalAlertaStock } from './components/ModalStockBajo';
 import { ModalProductosPorVencer } from './components/ModalProductoPorVencer';
+import { fmtStock } from '@/lib/peso';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
@@ -275,10 +276,10 @@ export default function ProductosPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-primary font-semibold break-words whitespace-normal text-left" title={p.categoriaNombre}>{p.categoriaNombre}</td>
-                  <td className="px-4 py-3 font-medium text-zinc-800 text-left">S/ {p.precioVenta.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-zinc-600 text-left">S/ {p.precioCompra.toFixed(2)}</td>
+                  <td className="px-4 py-3 font-medium text-zinc-800 text-left">S/ {p.precioVenta.toFixed(2)}{p.porPeso ? ' /kg' : ''}</td>
+                  <td className="px-4 py-3 text-zinc-600 text-left">S/ {p.precioCompra.toFixed(2)}{p.porPeso ? ' /kg' : ''}</td>
                   <td className="px-4 py-3 text-left">
-                    <span className={p.stockBajo ? 'text-red-500 font-semibold' : 'text-zinc-600'}>{p.stockActual}</span>
+                    <span className={p.stockBajo ? 'text-red-500 font-semibold' : 'text-zinc-600'}>{fmtStock(p, p.stockActual)}</span>
                   </td>
                   <td className="px-4 py-3 text-left">
                     <div className="flex flex-col items-center gap-1">

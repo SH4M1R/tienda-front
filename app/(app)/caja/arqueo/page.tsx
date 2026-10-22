@@ -66,14 +66,11 @@ export default function ArqueoPage() {
       ) : caja.error ? (
         <ErrorBox message={caja.error} onRetry={caja.reload} />
       ) : !caja.data ? (
-        <Card className="mb-6 max-w-lg">
-          <CardHeader title="Aperturar caja" subtitle="No tienes una caja abierta." />
-          <div className="p-5">
+          <div className="p-2">
             <Button onClick={() => setAbrirOpen(true)}>
               <Unlock className="h-4 w-4" /> Aperturar caja
             </Button>
           </div>
-        </Card>
       ) : (
         <div className="mb-6 grid gap-4 xl:grid-cols-3">
           {/* Panel con la Tabla / Resumen de Métodos de Pago */}

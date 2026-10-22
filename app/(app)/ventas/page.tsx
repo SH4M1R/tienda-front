@@ -9,6 +9,7 @@ import { fmtDateTime, money } from "@/lib/format";
 import { COMPROBANTES, medioLabel, type PageResponse, type Venta } from "@/lib/types";
 import { Badge, Button, Card, EmptyState, ErrorBox, Loading, Modal, PageHeader, Pagination, Table, Td, Th } from "@/components/ui";
 import { useFeedback } from "@/components/feedback";
+import { fmtPeso } from "@/lib/peso";
 
 function fechaLarga(iso: string) {
   const [a, m, d] = iso.split("-").map(Number);
@@ -135,7 +136,7 @@ export default function VentasPage() {
             <div className="divide-y divide-slate-100 rounded-lg border border-slate-200">
               {sel.detalles.map((d) => (
                 <div key={d.id} className="flex justify-between gap-3 px-3 py-2">
-                  <span className="min-w-0 truncate">{d.productoNombre} <span className="text-slate-400">× {d.cantidad}{d.tipoVenta === "CAJA" ? " caja(s)" : ""}</span></span>
+                  <span className="min-w-0 truncate">{d.productoNombre} <span className="text-slate-400">× {d.tipoVenta === "PESO" ? fmtPeso(d.cantidad) : d.cantidad}{d.tipoVenta === "CAJA" ? " caja(s)" : ""}</span></span>
                   <span className="shrink-0 font-medium">{money(d.subtotal)}</span>
                 </div>
               ))}

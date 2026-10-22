@@ -19,6 +19,8 @@ export interface Producto {
   categoriaNombre: string;
   stockActual: number;
   stockBajo: boolean;
+  /** Por peso: stock, stock mínimo y factor en gramos; precios de compra/venta por kg; precioCaja = precio del saco. */
+  porPeso?: boolean;
   imagen?: string | null;
 }
 
@@ -33,6 +35,7 @@ export interface ProductoPayload {
   precioCaja: number | null;
   factor: number | null;
   categoriaId: number;
+  porPeso: boolean;
 }
 
 export interface LoteProducto {
@@ -43,6 +46,7 @@ export interface LoteProducto {
   fechaVencimiento: string | null;
   stock: number;
   diasParaVencer: number | null;
+  porPeso?: boolean;
 }
 
 export interface LotePayload { lote: string | null; fechaVencimiento: string | null; stock: number }

@@ -359,6 +359,7 @@ export default function ConfiguracionPage() {
               <Paintbrush size={18} className="text-primary" />
               Color del Tema
             </span>
+            <p className="text-xs text-zinc-500">Selecciona el color de acento de la interfaz.</p>
 
             <div className="grid grid-cols-4 gap-3 pt-1">
               {PRESET_COLORS.map((c) => {
@@ -384,7 +385,8 @@ export default function ConfiguracionPage() {
               })}
             </div>
           </div>
-                    {/* Sucursales */}
+          
+          {/* Sucursales */}
           <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm font-bold text-zinc-800">
@@ -399,6 +401,7 @@ export default function ConfiguracionPage() {
                 <Plus size={14} /> Nueva
               </button>
             </div>
+            <p className="text-xs text-zinc-500">Origen y destino de los traslados.</p>
             {sucursales.length === 0 ? (
               <div className="py-6 text-center text-sm text-zinc-400">Sin sucursales registradas.</div>
             ) : (
@@ -425,6 +428,7 @@ export default function ConfiguracionPage() {
               </div>
             )}
           </div>
+          
         </div>
       </div>
 

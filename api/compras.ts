@@ -3,7 +3,7 @@ import { fetchPagina, type Pagina } from '@/api/paginacion';
 
 export const IGV_RATE = 0.18;
 
-export type UnidadMedida = 'UNIDAD' | 'CAJA';
+export type UnidadMedida = 'UNIDAD' | 'CAJA' | 'KG';
 
 export interface DetalleCompraResponse {
   id: number;

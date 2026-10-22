@@ -7,8 +7,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Intranet",
-  description: "Intranet administrativa de tienda",
+  title: "JPS Market",
+  description: "Sistema administrativa de tienda",
 };
 
 // Aplica el color guardado antes de pintar para evitar el "parpadeo" del color por defecto

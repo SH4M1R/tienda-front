@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { fmtStock } from "@/lib/peso";
 import { medioLabel } from "@/lib/types";
 import type {
   Asistencia, CierreCaja, ComprasReporte, CuentasPorPagar, FlujoCaja, InventarioReporte, Lote, PageResponse,
@@ -204,13 +205,13 @@ export const REPORTES: ReporteItem[] = [
       const cols: Col<ProductoInventario>[] = [
         { header: "Producto", width: 5, render: (x) => x.producto },
         { header: "Categoría", width: 3, render: (x) => x.categoria, pos: false },
-        { header: "Stock", width: 1.5, align: "right", render: (x) => String(x.stock), value: (x) => x.stock },
-        { header: "Costo", width: 2, align: "right", render: (x) => fmtMoneda(x.precioCompra), value: (x) => x.precioCompra, pos: false },
+        { header: "Stock", width: 1.5, align: "right", render: (x) => fmtStock(x, x.stock), value: (x) => (x.porPeso ? x.stock / 1000 : x.stock) },
+        { header: "Costo", width: 2, align: "right", render: (x) => fmtMoneda(x.precioCompra) + (x.porPeso ? " /kg" : ""), value: (x) => x.precioCompra, pos: false },
         { header: "Valor", width: 2.5, align: "right", render: (x) => fmtMoneda(x.valorizado), value: (x) => x.valorizado },
       ];
       return { titulo: "Inventario valorizado", columnas: cols, filas, archivo: "inventario_valorizado",
         resumen: [
-          { label: "Unidades", value: String(sumar(filas.map((x) => x.stock))) },
+          { label: "Unidades", value: String(sumar(filas.filter((x) => !x.porPeso).map((x) => x.stock))) },
           { label: "VALOR TOTAL", value: fmtMoneda(sumar(filas.map((x) => x.valorizado))), bold: true },
         ] };
     },
@@ -223,8 +224,8 @@ export const REPORTES: ReporteItem[] = [
       const cols: Col<Producto>[] = [
         { header: "Producto", width: 5, render: (x) => x.nombre },
         { header: "Categoría", width: 3, render: (x) => x.categoriaNombre, pos: false },
-        { header: "Stock", width: 1.5, align: "right", render: (x) => String(x.stockActual), value: (x) => x.stockActual },
-        { header: "Mín.", width: 1.5, align: "right", render: (x) => String(x.stockMinimo), value: (x) => x.stockMinimo },
+        { header: "Stock", width: 1.5, align: "right", render: (x) => fmtStock(x, x.stockActual), value: (x) => x.stockActual },
+        { header: "Mín.", width: 1.5, align: "right", render: (x) => fmtStock(x, x.stockMinimo), value: (x) => x.stockMinimo },
       ];
       return { titulo: "Alerta de stock bajo", columnas: cols, filas, archivo: "alerta_stock",
         resumen: [{ label: "Productos en alerta", value: String(filas.length), bold: true }] };
@@ -240,7 +241,7 @@ export const REPORTES: ReporteItem[] = [
         { header: "Lote", width: 2, render: (x) => x.lote ?? "—", pos: false },
         { header: "Vence", width: 2.5, render: (x) => fmtFechaCorta(x.fechaVencimiento) },
         { header: "Días", width: 1.2, align: "right", render: (x) => String(x.diasParaVencer ?? ""), value: (x) => x.diasParaVencer ?? "" },
-        { header: "Stock", width: 1.5, align: "right", render: (x) => String(x.stock), value: (x) => x.stock },
+        { header: "Stock", width: 1.5, align: "right", render: (x) => fmtStock(x, x.stock), value: (x) => x.stock },
       ];
       return { titulo: `Productos por vencer (${dias} días)`, columnas: cols, filas, archivo: `productos_por_vencer_${dias}d`,
         resumen: [{ label: "Lotes por vencer", value: String(filas.length), bold: true }] };

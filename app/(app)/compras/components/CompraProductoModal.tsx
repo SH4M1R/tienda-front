@@ -5,6 +5,7 @@ import { Search, X, Layers, PackagePlus } from "lucide-react";
 import type { DetalleCompraItem, UnidadMedida } from "@/api/compras";
 import { productosApi, type Producto } from "@/api/productos";
 import { useDebounce } from "@/hooks/useDebounce";
+import { fmtPeso, fmtStock } from "@/lib/peso";
 
 interface ProductoModalProps {
   open: boolean;
@@ -44,7 +45,7 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
     setProducto(p);
     setMostrarOpciones(false);
     const f = p.factor && p.factor > 1 ? p.factor : p.unidadesCaja && p.unidadesCaja > 1 ? p.unidadesCaja : 1;
-    setUnidadMedida(f > 1 ? "CAJA" : "UNIDAD");
+    setUnidadMedida(p.porPeso || f > 1 ? "CAJA" : "UNIDAD");
     setPrecioCompra("");
     setImporte("");
     setPrecioVenta(p.precioVenta);
@@ -57,11 +58,16 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
     setImporte("");
   };
 
+  const porPeso = !!producto?.porPeso;
+  // Por peso: factor = gramos del saco; precioCompra = costo por kg. Se compra por saco/paquete (CAJA) o por kg (KG).
   const precioSugerido = producto
-    ? unidadMedida === "CAJA" ? producto.precioCompra * factorProducto : producto.precioCompra
+    ? porPeso
+      ? unidadMedida === "CAJA" ? (producto.precioCompra * factorProducto) / 1000 : producto.precioCompra
+      : unidadMedida === "CAJA" ? producto.precioCompra * factorProducto : producto.precioCompra
     : 0;
 
-  const factorConversion = unidadMedida === "CAJA" ? factorProducto : 1;
+  // Unidades base ingresadas por cada "cantidad": factor (CAJA), 1000 g (KG) o 1.
+  const factorConversion = unidadMedida === "CAJA" ? factorProducto : unidadMedida === "KG" ? 1000 : 1;
 
   const unidadesIngresadas = useMemo(() => {
     const cant = typeof cantidad === "number" ? cantidad : 0;
@@ -133,7 +139,10 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
     if (!producto || !cantidadNum || cantidadNum <= 0 || !precioCompraNum) return;
 
     // Costo por unidad = importe / unidades netas
-    const costoUnidad = unidadesIngresadas > 0 ? Number((importeNum / unidadesIngresadas).toFixed(4)) : 0;
+    // Por peso: costo por KG = importe / (gramos / 1000)
+    const costoUnidad = unidadesIngresadas > 0
+      ? Number((porPeso ? (importeNum * 1000) / unidadesIngresadas : importeNum / unidadesIngresadas).toFixed(4))
+      : 0;
 
     // Actualiza costo y precio de venta de la ficha del producto
     try {
@@ -148,6 +157,7 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
         precioCaja: producto.precioCaja,
         factor: producto.factor,
         categoriaId: producto.categoriaId,
+        porPeso: !!producto.porPeso,
       });
     } catch (err) {
       console.error("No se pudo actualizar el precio de venta del producto:", err);
@@ -246,7 +256,7 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
                         )}
                       </div>
                       <span className="shrink-0 text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md">
-                        Stock: {p.stockActual}
+                        Stock: {fmtStock(p, p.stockActual)}
                       </span>
                     </li>
                   ))}
@@ -262,9 +272,10 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
                 className={inputClass}
               >
                 {(!producto || compraPorCajas) && (
-                  <option value="CAJA">Por Caja / Paquete</option>
+                  <option value="CAJA">{porPeso ? "Por Saco / Paquete" : "Por Caja / Paquete"}</option>
                 )}
-                <option value="UNIDAD">Por Unidad</option>
+                {porPeso && <option value="KG">Por Kg</option>}
+                {!porPeso && <option value="UNIDAD">Por Unidad</option>}
               </select>
               {producto && !compraPorCajas && (
                 <p className="text-[11px] text-zinc-400">
@@ -276,7 +287,7 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
             <div className="space-y-1">
-              <label className={labelClass}>{unidadMedida === "CAJA" ? "Cajas / Paquetes Ingresados" : "Unidades Ingresadas"}</label>
+              <label className={labelClass}>{unidadMedida === "CAJA" ? (porPeso ? "Sacos / Paquetes Ingresados" : "Cajas / Paquetes Ingresados") : unidadMedida === "KG" ? "Kilos Ingresados" : "Unidades Ingresadas"}</label>
               <div className="relative">
                 <input
                   type="number"
@@ -297,20 +308,20 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
 
             <div className="space-y-1">
               <label className={labelClass}>
-                Unidades Netas Ingresadas
+                {porPeso ? "Peso Total Ingresado" : "Unidades Netas Ingresadas"}
                 {unidadMedida === "CAJA" && producto && (
-                  <span className="ml-1 font-normal text-zinc-400">(x{factorConversion})</span>
+                  <span className="ml-1 font-normal text-zinc-400">({porPeso ? `${fmtPeso(factorConversion)} c/u` : `x${factorConversion}`})</span>
                 )}
               </label>
               <input
                 readOnly
-                value={unidadesIngresadas}
+                value={porPeso ? fmtPeso(unidadesIngresadas) : unidadesIngresadas}
                 className={`${inputClass} bg-zinc-100 font-bold text-zinc-800`}
               />
             </div>
 
             <div className="space-y-1">
-              <label className={labelClass}>{unidadMedida === "CAJA" ? "Precio de Compra (por caja/paquete)" : "Precio de Compra (por unidad)"}</label>
+              <label className={labelClass}>{unidadMedida === "CAJA" ? (porPeso ? "Precio de Compra (por saco/paquete)" : "Precio de Compra (por caja/paquete)") : unidadMedida === "KG" ? "Precio de Compra (por kg)" : "Precio de Compra (por unidad)"}</label>
               <input
                 type="number"
                 step="any"
@@ -336,7 +347,7 @@ export default function ProductoModal({ open, onClose, onAgregar }: ProductoModa
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className={labelClass}>Precio de Venta (por unidad)</label>
+              <label className={labelClass}>{porPeso ? "Precio de Venta (por kg)" : "Precio de Venta (por unidad)"}</label>
               <input
                 type="number"
                 step="any"

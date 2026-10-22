@@ -33,7 +33,7 @@ interface ProductoModalProps {
 
 const emptyForm: ProductoPayload = {
   nombre: '', precioCompra: 0, precioVenta: 0, stockMinimo: 0, estado: true, barras: '',
-  unidadesCaja: null, precioCaja: null, factor: null, categoriaId: 0,
+  unidadesCaja: null, precioCaja: null, factor: null, categoriaId: 0, porPeso: false,
 };
 
 export default function ProductoModal({ open, producto, onClose, onSave }: ProductoModalProps) {
@@ -42,6 +42,10 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
   // El costo se ingresa por caja/paquete; el costo por unidad se calcula con el factor.
   const [factor, setFactor] = useState<number>(1);
   const [costoPaquete, setCostoPaquete] = useState<number>(0);
+  // Producto por peso: el saco/paquete se guarda entero pero se vende por kg o gramos (stock interno en gramos).
+  const [porPeso, setPorPeso] = useState(false);
+  const [pesoKg, setPesoKg] = useState<number>(0);
+  const [stockMinKg, setStockMinKg] = useState<number>(0);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -68,11 +72,17 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
       precioCaja: producto.precioCaja ?? null,
       factor: producto.factor ?? null,
       categoriaId: producto.categoriaId,
+      porPeso: !!producto.porPeso,
     } : emptyForm);
     const f = producto ? (producto.factor && producto.factor > 0 ? producto.factor : producto.unidadesCaja && producto.unidadesCaja > 0 ? producto.unidadesCaja : 1) : 1;
+    const pp = !!producto?.porPeso;
+    setPorPeso(pp);
+    setPesoKg(pp ? f / 1000 : 0);
+    setStockMinKg(pp ? (producto?.stockMinimo ?? 0) / 1000 : 0);
     setFactor(f);
-    setCostoPaquete(producto ? Number((producto.precioCompra * f).toFixed(4)) : 0);
-    setVendePorCaja(!!producto && !!producto.unidadesCaja && !!producto.precioCaja);
+    // Por peso: precioCompra es por kg y el factor está en gramos
+    setCostoPaquete(producto ? Number((producto.precioCompra * (pp ? f / 1000 : f)).toFixed(4)) : 0);
+    setVendePorCaja(!pp && !!producto && !!producto.unidadesCaja && !!producto.precioCaja);
     setArchivo(null);
     setQuitarImagen(false);
   }, [producto, open]);
@@ -100,10 +110,12 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
     e.preventDefault();
     if (!form.nombre.trim()) return setError('El nombre es obligatorio.');
     if (!form.categoriaId) return setError('Selecciona una categoría.');
-    if (!factor || factor < 1 || !Number.isInteger(factor)) return setError('Ingresa el factor (unidades por caja o paquete, mínimo 1).');
+    if (porPeso) {
+      if (!(pesoKg > 0) || Math.round(pesoKg * 1000) < 1) return setError('Ingresa el peso del saco o paquete en kg.');
+    } else if (!factor || factor < 1 || !Number.isInteger(factor)) return setError('Ingresa el factor (unidades por caja o paquete, mínimo 1).');
     if (!(costoPaquete >= 0)) return setError('Ingresa el precio costo.');
-    if (!form.precioVenta || form.precioVenta <= 0) return setError('Ingresa el precio de venta.');
-    if (vendePorCaja && (factor < 2 || !form.precioCaja || form.precioCaja <= 0)) {
+    if (!form.precioVenta || form.precioVenta <= 0) return setError(porPeso ? 'Ingresa el precio de venta por kg.' : 'Ingresa el precio de venta.');
+    if (!porPeso && vendePorCaja && (factor < 2 || !form.precioCaja || form.precioCaja <= 0)) {
       return setError('Para vender por caja el factor debe ser mayor a 1 y debes indicar el precio de la caja.');
     }
 
@@ -112,9 +124,11 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
       precioCompra: costoUnitario,
       nombre: form.nombre.trim(),
       barras: form.barras?.trim() || null,
-      unidadesCaja: vendePorCaja ? factor : null,
-      factor,
-      precioCaja: vendePorCaja ? form.precioCaja : null,
+      unidadesCaja: !porPeso && vendePorCaja ? factor : null,
+      factor: porPeso ? factorEfectivo : factor,
+      precioCaja: !porPeso && vendePorCaja ? form.precioCaja : null,
+      porPeso,
+      stockMinimo: porPeso ? Math.round(stockMinKg * 1000) : form.stockMinimo,
     };
 
     setSaving(true);
@@ -129,7 +143,11 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
     }
   };
 
-  const costoUnitario = costoPaquete > 0 && factor > 0 ? Number((costoPaquete / factor).toFixed(4)) : 0;
+  const factorEfectivo = porPeso ? Math.round(pesoKg * 1000) : factor;
+  // Por unidad: costo por unidad. Por peso: costo por KG.
+  const costoUnitario = porPeso
+    ? (costoPaquete > 0 && pesoKg > 0 ? Number((costoPaquete / pesoKg).toFixed(4)) : 0)
+    : (costoPaquete > 0 && factor > 0 ? Number((costoPaquete / factor).toFixed(4)) : 0);
   const gananciaUnidadPct = costoUnitario > 0 ? ((form.precioVenta - costoUnitario) / costoUnitario) * 100 : 0;
   const costoCaja = costoPaquete;
   const gananciaCajaPct = costoCaja > 0 && form.precioCaja ? ((form.precioCaja - costoCaja) / costoCaja) * 100 : 0;
@@ -193,6 +211,10 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
                   />
                   <span className="text-sm font-medium text-zinc-700">Producto activo</span>
                 </label>
+                <label className="ml-4 flex items-center gap-2 cursor-pointer select-none" title="Se compra por saco/paquete y se vende por kg o gramos">
+                  <input type="checkbox" checked={porPeso} onChange={(e) => setPorPeso(e.target.checked)} className="w-4 h-4 accent-primary rounded cursor-pointer" />
+                  <span className="text-sm font-medium text-zinc-700">Se vende por peso</span>
+                </label>
               </div>
 
               <div className="space-y-1">
@@ -232,25 +254,33 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
             <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-400">Precios y Stock</h3>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {porPeso ? (
+                <div className="space-y-1">
+                  <label className={labelClass}>Peso del saco/paquete (kg)</label>
+                  <input type="number" min="0" step="0.001" value={pesoKg || ''} placeholder="Ej. 50"
+                    onChange={(e) => setPesoKg(e.target.value ? Math.max(0, Number(e.target.value)) : 0)} className={inputClass} />
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className={labelClass}>Factor (unidades por caja/paquete)</label>
+                  <input type="number" min="1" step="1" value={factor || ''} placeholder="Ej. 12"
+                    onChange={(e) => setFactor(e.target.value ? Math.max(0, Math.floor(Number(e.target.value))) : 0)} className={inputClass} />
+                </div>
+              )}
               <div className="space-y-1">
-                <label className={labelClass}>Factor (unidades por caja/paquete)</label>
-                <input type="number" min="1" step="1" value={factor || ''} placeholder="Ej. 12"
-                  onChange={(e) => setFactor(e.target.value ? Math.max(0, Math.floor(Number(e.target.value))) : 0)} className={inputClass} />
-              </div>
-              <div className="space-y-1">
-                <label className={labelClass}>Precio costo por caja/paquete</label>
+                <label className={labelClass}>{porPeso ? 'Precio costo por saco/paquete' : 'Precio costo por caja/paquete'}</label>
                 <input type="number" step="0.01" min="0" value={costoPaquete} onChange={(e) => setCostoPaquete(Number(e.target.value))} className={inputClass} />
               </div>
               <div className="space-y-1">
-                <label className={labelClass}>Precio costo por unidad</label>
+                <label className={labelClass}>{porPeso ? 'Precio costo por kg' : 'Precio costo por unidad'}</label>
                 <input type="text" disabled value={`S/ ${costoUnitario.toFixed(4)}`} className={calculatedInputClass} />
               </div>
               <div className="space-y-1">
-                <label className={labelClass}>Precio venta unidad</label>
+                <label className={labelClass}>{porPeso ? 'Precio venta por kg' : 'Precio venta unidad'}</label>
                 <input type="number" step="0.01" min="0" value={form.precioVenta} onChange={(e) => set('precioVenta', Number(e.target.value))} className={inputClass} />
               </div>
               <div className="space-y-1">
-                <label className={labelClass}>% Ganancia (Unidades)</label>
+                <label className={labelClass}>{porPeso ? '% Ganancia (kg)' : '% Ganancia (Unidades)'}</label>
                 <input
                   type="text"
                   disabled
@@ -259,17 +289,25 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
                 />
               </div>
               <div className="space-y-1">
-                <label className={labelClass}>Stock Mínimo</label>
-                <input type="number" min="0" value={form.stockMinimo ?? ''} onChange={(e) => set('stockMinimo', Number(e.target.value))} className={inputClass} />
+                <label className={labelClass}>{porPeso ? 'Stock Mínimo (kg)' : 'Stock Mínimo'}</label>
+                {porPeso
+                  ? <input type="number" min="0" step="0.001" value={stockMinKg} onChange={(e) => setStockMinKg(Number(e.target.value))} className={inputClass} />
+                  : <input type="number" min="0" value={form.stockMinimo ?? ''} onChange={(e) => set('stockMinimo', Number(e.target.value))} className={inputClass} />}
               </div>
             </div>
+
+            {porPeso && (
+              <p className="text-[11px] text-zinc-400">
+                Se compra por saco/paquete (o por kg) y se guarda el stock en gramos; en ventas el cajero indica el peso o el monto y se calcula el otro.
+              </p>
+            )}
 
             {!producto && (
               <p className="text-[11px] text-zinc-400">El stock se ingresa desde Compras o Traslados (cada ingreso crea su lote).</p>
             )}
           </div>
 
-          <div className="space-y-4 pt-2 border-t border-zinc-100">
+          {!porPeso && <div className="space-y-4 pt-2 border-t border-zinc-100">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-400">Presentaciones de Venta</h3>
@@ -303,7 +341,7 @@ export default function ProductoModal({ open, producto, onClose, onSave }: Produ
                 ) : null}
               </div>
             )}
-          </div>
+          </div>}
 
           <div className="flex items-center justify-end pt-2 border-t border-zinc-100">
             {error && <p className="text-xs text-red-500 font-medium">{error}</p>}

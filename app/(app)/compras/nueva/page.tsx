@@ -386,7 +386,7 @@ export default function GenerarCompraPage() {
                         <td className="px-3 py-2 font-medium text-zinc-800 text-xs">{d.nombreProducto}</td>
                         <td className="px-3 py-2 text-zinc-600 text-xs">{d.lote ?? "-"}</td>
                         <td className="px-3 py-2 text-zinc-600 text-xs">{d.fechaVencimiento ?? "-"}</td>
-                        <td className="px-3 py-2 text-zinc-600 text-xs">{d.unidadMedida === "CAJA" ? "Caja" : "Unidad"}</td>
+                        <td className="px-3 py-2 text-zinc-600 text-xs">{d.unidadMedida === "CAJA" ? "Caja" : d.unidadMedida === "KG" ? "Kg" : "Unidad"}</td>
                         <td className="px-3 py-2 font-semibold text-zinc-800 text-xs">{d.cantidad}</td>
                         <td className="px-3 py-2 text-zinc-600 text-xs">S/ {d.precioUnitario.toFixed(2)}</td>
                         <td className="px-3 py-2 font-semibold text-zinc-800 text-xs">S/ {d.importe.toFixed(2)}</td>

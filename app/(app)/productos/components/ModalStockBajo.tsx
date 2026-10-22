@@ -3,6 +3,7 @@ import { FileText, Download, Printer, AlertTriangle, X, Loader2, Search, Package
 import { productosApi, type Producto } from '@/api/productos';
 import { exportarReporte, previsualizarReporte, type Col, type Formato, type ReportDef } from '@/lib/reportes';
 import { useEmpresaDoc } from '@/hooks/useEmpresaDoc';
+import { fmtStock } from '@/lib/peso';
 
 interface ModalAlertaStockProps {
   isOpen: boolean;
@@ -41,8 +42,8 @@ export const ModalAlertaStock: React.FC<ModalAlertaStockProps> = ({
       const cols: Col<Fila>[] = [
         { header: 'Producto', width: 5, render: (p) => p.nombre },
         { header: 'Categoría', width: 3, render: (p) => p.categoriaNombre, pos: false },
-        { header: 'Stock', width: 1.5, align: 'right', render: (p) => String(p.stockActual), value: (p) => p.stockActual },
-        { header: 'Mín.', width: 1.5, align: 'right', render: (p) => String(p.stockMinimo), value: (p) => p.stockMinimo },
+        { header: 'Stock', width: 1.5, align: 'right', render: (p) => fmtStock(p, p.stockActual), value: (p) => p.stockActual },
+        { header: 'Mín.', width: 1.5, align: 'right', render: (p) => fmtStock(p, p.stockMinimo), value: (p) => p.stockMinimo },
       ];
       const def: ReportDef<Fila> = {
         titulo: 'Alerta de stock mínimo',
@@ -159,8 +160,8 @@ export const ModalAlertaStock: React.FC<ModalAlertaStockProps> = ({
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-4 py-2.5 font-semibold text-slate-800">{p.nombre}</td>
                       <td className="px-4 py-2.5 text-slate-600">{p.categoriaNombre ?? '-'}</td>
-                      <td className="px-4 py-2.5 text-right font-bold text-red-500">{p.stockActual}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-500">{p.stockMinimo}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-red-500">{fmtStock(p, p.stockActual)}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-500">{fmtStock(p, p.stockMinimo)}</td>
                     </tr>
                   ))}
                 </tbody>

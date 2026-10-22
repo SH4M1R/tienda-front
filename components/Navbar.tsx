@@ -31,7 +31,7 @@ export default function Navbar({ onToggleSidebar }: Props) {
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <button type="button" onClick={onToggleSidebar} aria-label="Abrir menú" className="-ml-1 cursor-pointer rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 md:hidden"><Menu size={22} /></button>
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          {pub.logo && <img src={pub.logo} alt="Logo" className="h-8 w-8 shrink-0 rounded-lg object-contain sm:h-10 sm:w-10" />}
+          {pub.logo && <img src={pub.logo} alt="Logo" className="h-8 w-8 shrink-0 rounded-lg object-contain sm:h-10 sm:w-30" />}
           <span className="truncate text-sm font-bold tracking-tight text-primary sm:text-lg">{nombre}</span>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Pencil, Plus, X } from 'lucide-react';
 import { productosApi, type LoteProducto, type Producto } from '@/api/productos';
+import { fmtStock } from '@/lib/peso';
 
 interface StockModalProps {
   open: boolean;
@@ -49,13 +50,13 @@ export default function StockModal({ open, producto, onClose, onChanged }: Stock
 
   const editar = (l: LoteProducto) => {
     setError('');
-    setForm({ id: l.id, lote: l.lote ?? '', fechaVencimiento: l.fechaVencimiento ?? '', stock: String(l.stock) });
+    setForm({ id: l.id, lote: l.lote ?? '', fechaVencimiento: l.fechaVencimiento ?? '', stock: producto.porPeso ? String(l.stock / 1000) : String(l.stock) });
   };
 
   const guardar = async () => {
     if (!form) return;
-    const stock = Number(form.stock);
-    if (form.stock === '' || !Number.isInteger(stock) || stock < 0) return setError('El stock debe ser un número entero mayor o igual a 0.');
+    const stock = producto.porPeso ? Math.round(Number(form.stock) * 1000) : Number(form.stock);
+    if (form.stock === '' || !Number.isInteger(stock) || stock < 0) return setError(producto.porPeso ? 'El stock debe ser un peso en kg mayor o igual a 0.' : 'El stock debe ser un número entero mayor o igual a 0.');
     setGuardando(true);
     setError('');
     try {
@@ -85,8 +86,8 @@ export default function StockModal({ open, producto, onClose, onChanged }: Stock
 
         <div className="px-6 py-3 bg-zinc-50 border-b border-zinc-200 shrink-0 flex items-center justify-between gap-3">
           <span className="text-sm text-zinc-600">
-            Stock total: <span className="font-bold text-zinc-800">{stockTotal}</span>
-            <span className="text-zinc-400"> · Mínimo: {producto.stockMinimo}</span>
+            Stock total: <span className="font-bold text-zinc-800">{fmtStock(producto, stockTotal)}</span>
+            <span className="text-zinc-400"> · Mínimo: {fmtStock(producto, producto.stockMinimo)}</span>
           </span>
           {!form && (
             <button
@@ -112,8 +113,8 @@ export default function StockModal({ open, producto, onClose, onChanged }: Stock
                 <input type="date" value={form.fechaVencimiento} onChange={(e) => setForm({ ...form, fechaVencimiento: e.target.value })} className={inputClass} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-600">Stock (und)</label>
-                <input type="number" min="0" step="1" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className={inputClass} />
+                <label className="text-xs font-semibold text-zinc-600">{producto.porPeso ? 'Stock (kg)' : 'Stock (und)'}</label>
+                <input type="number" min="0" step={producto.porPeso ? "0.001" : "1"} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className={inputClass} />
               </div>
             </div>
             <div className="flex justify-end gap-2">
@@ -147,7 +148,7 @@ export default function StockModal({ open, producto, onClose, onChanged }: Stock
                     <td className="px-4 py-2 text-zinc-700">
                       {l.fechaVencimiento ? new Date(l.fechaVencimiento + 'T00:00:00').toLocaleDateString('es-PE') : <span className="text-zinc-400 italic">sin fecha</span>}
                     </td>
-                    <td className="px-4 py-2 text-right font-semibold text-zinc-800">{l.stock}</td>
+                    <td className="px-4 py-2 text-right font-semibold text-zinc-800">{fmtStock(producto, l.stock)}</td>
                     <td className="px-4 py-2 text-right">
                       <button
                         type="button"

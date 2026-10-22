@@ -1,6 +1,6 @@
 export type Rol = "ADMIN" | "CAJERO" | "ALMACEN";
 export type MedioPago = "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "YAPE_PLIN";
-export type TipoUnidad = "UNIDAD" | "CAJA";
+export type TipoUnidad = "UNIDAD" | "CAJA" | "PESO";
 export type TipoComprobante = "NOTA_VENTA" | "BOLETA" | "FACTURA";
 
 export const COMPROBANTES: { value: TipoComprobante; label: string; serie: string; disponible: boolean }[] = [
@@ -28,10 +28,12 @@ export interface Producto {
   id: number; nombre: string; precioCompra: number; precioVenta: number; stockMinimo: number; estado: boolean;
   barras: string | null; unidadesCaja: number | null; precioCaja: number | null; factor: number | null;
   categoriaId: number; categoriaNombre: string; stockActual: number; stockBajo: boolean;
+  /** Se vende por peso: stock/factor en gramos, precios por kg. */
+  porPeso?: boolean;
 }
 export interface Lote {
   id: number; productoId: number; productoNombre: string; lote: string | null;
-  fechaVencimiento: string | null; stock: number; diasParaVencer: number | null;
+  fechaVencimiento: string | null; stock: number; diasParaVencer: number | null; porPeso?: boolean;
 }
 
 export interface Proveedor {
@@ -172,6 +174,6 @@ export interface MovimientoFlujo { fecha: string; tipo: string; categoria: strin
 export interface FlujoCaja { ingresos: number; egresos: number; neto: number; movimientos: MovimientoFlujo[] }
 export interface CuentaPorPagar { compraId: number; proveedor: string; comprobante: string; fechaEmision: string; total: number; pendiente: number; diasAntiguedad: number }
 export interface CuentasPorPagar { totalPendiente: number; items: CuentaPorPagar[] }
-export interface ProductoInventario { productoId: number; producto: string; categoria: string; stock: number; stockMinimo: number; precioCompra: number; valorizado: number }
+export interface ProductoInventario { productoId: number; producto: string; categoria: string; stock: number; stockMinimo: number; precioCompra: number; valorizado: number; porPeso?: boolean }
 
 export interface Horario { matriz: number[][]; maximo: number }

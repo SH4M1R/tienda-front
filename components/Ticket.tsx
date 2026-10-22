@@ -1,6 +1,7 @@
 "use client";
 import { fmtDateTime, money } from "@/lib/format";
 import { medioLabel, type Empresa, type Venta } from "@/lib/types";
+import { fmtPeso } from "@/lib/peso";
 
 /** Comprobante en formato ticket 80mm. Se imprime con window.print() gracias a la clase `print-area`. */
 export default function Ticket({ venta, empresa, nombre }: { venta: Venta; empresa: Empresa | null; nombre: string }) {
@@ -28,7 +29,7 @@ export default function Ticket({ venta, empresa, nombre }: { venta: Venta; empre
         <div key={d.id} className="mb-1">
           <p className="truncate">{d.productoNombre}</p>
           <div className="flex justify-between">
-            <span>{d.cantidad} {d.tipoVenta === "CAJA" ? "caja(s)" : "und"} x {d.precioUnitario.toFixed(2)}</span>
+            <span>{d.tipoVenta === "PESO" ? `${fmtPeso(d.cantidad)} x ${d.precioUnitario.toFixed(2)}/kg` : `${d.cantidad} ${d.tipoVenta === "CAJA" ? "caja(s)" : "und"} x ${d.precioUnitario.toFixed(2)}`}</span>
             <span>{d.subtotal.toFixed(2)}</span>
           </div>
         </div>

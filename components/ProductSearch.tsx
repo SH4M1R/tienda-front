@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { Loader2, ScanBarcode, Search } from "lucide-react";
 import { ApiError, api, errorMessage } from "@/lib/api";
 import { money } from "@/lib/format";
+import { fmtStock } from "@/lib/peso";
 import type { PageResponse, Producto } from "@/lib/types";
 import { Badge, cn, inputCls } from "./ui";
 import { useFeedback } from "./feedback";
@@ -118,8 +119,8 @@ export default function ProductSearch({
                   <span className="block truncate text-xs text-slate-500">{p.categoriaNombre}{p.barras ? ` · ${p.barras}` : ""}</span>
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-0.5">
-                  <span className="text-sm font-semibold text-slate-900">{money(p.precioVenta)}</span>
-                  <Badge tone={p.stockActual <= 0 ? "red" : p.stockBajo ? "amber" : "green"}>Stock {p.stockActual}</Badge>
+                  <span className="text-sm font-semibold text-slate-900">{money(p.precioVenta)}{p.porPeso ? " /kg" : ""}</span>
+                  <Badge tone={p.stockActual <= 0 ? "red" : p.stockBajo ? "amber" : "green"}>Stock {fmtStock(p, p.stockActual)}</Badge>
                 </span>
               </button>
             </li>
